@@ -9,6 +9,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	go.mongodb.org/mongo-driver v1.16.1
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 )
 
 require (

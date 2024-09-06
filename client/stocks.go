@@ -39,7 +39,7 @@ type Stock struct {
 	DailyChange float64            `json:"dailyChange,omitempty"`
 }
 
-type LocaleString map[string]string
+type LocaleString map[Locale]string
 
 type StockDetail struct {
 	ID                   primitive.ObjectID `json:"id"`
