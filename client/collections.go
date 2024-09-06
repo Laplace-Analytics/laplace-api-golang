@@ -116,10 +116,6 @@ func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale)
 	return c.getAllCollections(ctx, CollectionTypeTheme, region, locale)
 }
 
-func (c *Client) GetAllCustomThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeCustomTheme, region, locale)
-}
-
 func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
 	return c.getAllCollections(ctx, CollectionTypeCollection, region, locale)
 }
@@ -133,8 +129,6 @@ func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region
 }
 
 func (c *Client) GetThemeDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-func (c *Client) GetCustomThemeDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeCustomTheme, region, locale)
 	return c.getCollectionDetail(ctx, id, CollectionTypeTheme, region, locale, "")
 }
 
