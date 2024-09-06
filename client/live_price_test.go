@@ -39,7 +39,19 @@ func testLivePrice(t *testing.T, client *Client, symbols []string, region Region
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	livePrices, errs, close, err := client.GetLivePriceForBIST(ctx, symbols, region)
+	var livePrices <-chan StockLiveData
+	var errs <-chan error
+	var close func()
+	var err error
+	if region == RegionTr {
+		var bistLiveData <-chan BISTStockLiveData
+		bistLiveData, errs, close, err = client.GetLivePriceForBIST(ctx, symbols)
+		livePrices = convertChannel(bistLiveData)
+	} else {
+		var usLiveData <-chan USStockLiveData
+		usLiveData, errs, close, err = getLivePrice[USStockLiveData](client, ctx, symbols, region)
+		livePrices = convertChannel(usLiveData)
+	}
 	require.NoError(t, err)
 	defer close()
 	livePriceCount := 0
@@ -65,4 +77,16 @@ func testLivePrice(t *testing.T, client *Client, symbols []string, region Region
 			return
 		}
 	}
+}
+
+// Add this helper function at the end of the file
+func convertChannel[T StockLiveData](ch <-chan T) <-chan StockLiveData {
+	out := make(chan StockLiveData)
+	go func() {
+		defer close(out)
+		for v := range ch {
+			out <- v
+		}
+	}()
+	return out
 }
