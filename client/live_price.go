@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func getLivePrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (<-chan T, <-chan error, error) {
+func getLivePrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (data <-chan T, errors <-chan error, close func(), err error) {
 	// Construct the URL
 	streamID := uuid.New().String()
 	url := fmt.Sprintf("%s/api/v1/stock/price/live?filter=%s&region=%s&stream=%s", c.baseUrl, strings.Join(symbols, ","), string(region), streamID)
@@ -17,7 +17,7 @@ func getLivePrice[T any](c *Client, ctx context.Context, symbols []string, regio
 	// Create a new request
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	return sendSSERequest[T](ctx, c, req)
 }
@@ -28,7 +28,7 @@ type BISTStockLiveData struct {
 	ClosePrice         float64 `json:"p"`
 }
 
-func (c *Client) GetLivePriceForBIST(ctx context.Context, symbols []string, region Region) (<-chan BISTStockLiveData, <-chan error, error) {
+func (c *Client) GetLivePriceForBIST(ctx context.Context, symbols []string, region Region) (data <-chan BISTStockLiveData, errors <-chan error, close func(), err error) {
 	return getLivePrice[BISTStockLiveData](c, ctx, symbols, region)
 }
 
@@ -38,6 +38,6 @@ type USStockLiveData struct {
 	AskPrice float64 `json:"ap"`
 }
 
-func (c *Client) GetLivePriceForUS(ctx context.Context, symbols []string, region Region) (<-chan USStockLiveData, <-chan error, error) {
+func (c *Client) GetLivePriceForUS(ctx context.Context, symbols []string, region Region) (data <-chan USStockLiveData, errors <-chan error, close func(), err error) {
 	return getLivePrice[USStockLiveData](c, ctx, symbols, region)
 }

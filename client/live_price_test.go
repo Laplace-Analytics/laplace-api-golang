@@ -39,9 +39,9 @@ func testLivePrice(t *testing.T, client *Client, symbols []string, region Region
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	livePrices, errs, err := client.GetLivePriceForBIST(ctx, symbols, region)
+	livePrices, errs, close, err := client.GetLivePriceForBIST(ctx, symbols, region)
 	require.NoError(t, err)
-
+	defer close()
 	livePriceCount := 0
 
 	for {

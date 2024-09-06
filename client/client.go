@@ -67,7 +67,7 @@ func sendRequest[T any](
 func sendSSERequest[T any](
 	ctx context.Context,
 	c *Client,
-	r *http.Request) (<-chan T, <-chan error, error) {
+	r *http.Request) (<-chan T, <-chan error, func(), error) {
 	// Set headers
 	r.Header.Set("Accept", "text/event-stream")
 	r.Header.Set("Cache-Control", "no-cache")
@@ -77,24 +77,31 @@ func sendSSERequest[T any](
 	// Send the request
 	resp, err := c.cli.Do(r.WithContext(ctx))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Check the response status
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
+		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	// Create a channel to send LivePriceEvents
 	events := make(chan T)
 	errorChan := make(chan error)
 
+	// Create a new context with cancellation
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+
+	// Modify the request to use the new context
+	r = r.WithContext(ctxWithCancel)
+
 	// Start a goroutine to read the SSE stream
 	go func() {
 		defer resp.Body.Close()
 		defer close(events)
+		defer close(errorChan)
 
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
@@ -113,7 +120,16 @@ func sendSSERequest[T any](
 		if err := scanner.Err(); err != nil {
 			errorChan <- fmt.Errorf("error reading SSE stream: %w", err)
 		}
+
+		// Add a select statement to handle cancellation
+		select {
+		case <-ctxWithCancel.Done():
+			return
+		default:
+			// Continue with the existing logic
+		}
 	}()
 
-	return events, errorChan, nil
+	// Return the channels, a cancellation function, and error
+	return events, errorChan, cancel, nil
 }
