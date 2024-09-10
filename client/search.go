@@ -10,6 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type PaginationPageSize int
+
+const (
+	PageSize10 PaginationPageSize = 10
+	PageSize20 PaginationPageSize = 20
+	PageSize50 PaginationPageSize = 50
+)
+
 type SearchType string
 
 const (
@@ -44,7 +52,7 @@ type SearchResponseCollection struct {
 	AvatarUrl  string             `json:"avatarUrl"`
 }
 
-func (c *Client) Search(ctx context.Context, query string, types []SearchType, region Region, locale Locale) (*SearchResponse, error) {
+func (c *Client) Search(ctx context.Context, query string, types []SearchType, region Region, locale Locale, page int, pageSize PaginationPageSize) (*SearchResponse, error) {
 	typesStr := strings.Join(lo.Map(types, func(key SearchType, _ int) string {
 		return string(key)
 	}), ",")
@@ -60,6 +68,8 @@ func (c *Client) Search(ctx context.Context, query string, types []SearchType, r
 	q.Add("types", typesStr)
 	q.Add("region", string(region))
 	q.Add("locale", string(locale))
+	q.Add("page", fmt.Sprintf("%d", page))
+	q.Add("size", fmt.Sprintf("%d", pageSize))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[SearchResponse](ctx, c, req)

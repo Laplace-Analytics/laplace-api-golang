@@ -25,7 +25,7 @@ func (s *SearchTestSuite) TestSearchStock() {
 
 	ctx := context.Background()
 
-	resp, err := client.Search(ctx, "TUPRS", []SearchType{SearchTypeStock}, RegionTr, LocaleTr)
+	resp, err := client.Search(ctx, "TUPRS", []SearchType{SearchTypeStock}, RegionTr, LocaleTr, 0, PageSize10)
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)
@@ -36,7 +36,7 @@ func (s *SearchTestSuite) TestSearchIndustry() {
 
 	ctx := context.Background()
 
-	resp, err := client.Search(ctx, "Hava Taşımacılığı", []SearchType{SearchTypeIndustry}, RegionTr, LocaleTr)
+	resp, err := client.Search(ctx, "Hava Taşımacılığı", []SearchType{SearchTypeIndustry}, RegionTr, LocaleTr, 0, PageSize10)
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)
@@ -52,7 +52,7 @@ func (s *SearchTestSuite) TestSearchAllTypes() {
 		SearchTypeIndustry,
 		SearchTypeSector,
 		SearchTypeCollection,
-	}, RegionUs, LocaleTr)
+	}, RegionUs, LocaleTr, 0, PageSize10)
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)
