@@ -44,10 +44,13 @@ func getLaplaceError(httpErr *LaplaceHTTPError) {
 		}
 	case http.StatusBadRequest:
 		switch httpErr.Message {
-		case "{\"message\":\"this token is not valid\"}\n":
-			httpErr.InternalError = ErrInvalidToken
 		case "{\"message\":\"invalid id\"}\n":
 			httpErr.InternalError = ErrInvalidID
+		}
+	case http.StatusUnauthorized:
+		switch httpErr.Message {
+		case "{\"message\":\"this token is not valid\"}\n":
+			httpErr.InternalError = ErrInvalidToken
 		}
 	}
 }

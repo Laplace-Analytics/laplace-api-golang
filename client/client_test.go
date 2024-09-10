@@ -2,11 +2,13 @@ package client
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
 	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,4 +35,37 @@ func (s *LaplaceClientTestSuite) TestClient() {
 	res, err := sendRequest[any](context.Background(), client, req)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(res)
+}
+
+func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
+	client := NewClient(s.Config, logrus.New())
+
+	_, err := client.GetAllCollections(context.Background(), "aaa", LocaleTr)
+	require.Error(s.T(), err)
+	require.True(s.T(), errors.Is(err, ErrYouDoNotHaveAccessToEndpoint))
+}
+
+func (s *LaplaceClientTestSuite) TestInvalidToken() {
+	invalidConfig := &utilities.LaplaceConfiguration{
+		BaseURL: s.Config.BaseURL,
+		APIKey:  "invalid",
+	}
+
+	client := NewClient(*invalidConfig, logrus.New())
+
+	_, err := client.GetAllCollections(context.Background(), RegionTr, LocaleTr)
+	require.Error(s.T(), err)
+	require.True(s.T(), errors.Is(err, ErrInvalidToken))
+}
+
+func (s *LaplaceClientTestSuite) TestInvalidID() {
+	client := NewClient(s.Config, logrus.New())
+
+	_, err := client.GetCollectionDetail(context.Background(), "invalid", RegionTr, LocaleTr)
+	require.Error(s.T(), err)
+	require.True(s.T(), errors.Is(err, ErrInvalidID))
+
+	_, err = client.GetStockDetailByID(context.Background(), "invalid", LocaleTr)
+	require.Error(s.T(), err)
+	require.True(s.T(), errors.Is(err, ErrInvalidID))
 }
