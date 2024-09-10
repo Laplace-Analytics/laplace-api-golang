@@ -54,7 +54,11 @@ func sendRequest[T any](
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return resp, fmt.Errorf("unexpected status code: %d, body: %s", res.StatusCode, string(body))
+		httpErr := &LaplaceHTTPError{
+			HTTPStatus: res.StatusCode,
+			Message:    string(body),
+		}
+		return resp, WrapError(httpErr)
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
