@@ -20,30 +20,36 @@ type StockDividend struct {
 }
 
 type StockStats struct {
-	PreviousClose float64 `json:"previousClose"`
-	YtdReturn     float64 `json:"ytdReturn"`
-	YearlyReturn  float64 `json:"yearlyReturn"`
-	MarketCap     float64 `json:"marketCap"`
-	PeRatio       float64 `json:"peRatio"`
-	PbRatio       float64 `json:"pbRatio"`
-	YearLow       float64 `json:"yearLow"`
-	YearHigh      float64 `json:"yearHigh"`
-	ThreeYear     float64 `json:"3Year"`
-	FiveYear      float64 `json:"5Year"`
-	Symbol        string  `json:"symbol"`
+	PreviousClose    float64 `json:"previousClose"`
+	MarketCap        float64 `json:"marketCap"`
+	PeRatio          float64 `json:"peRatio"`
+	PbRatio          float64 `json:"pbRatio"`
+	YearLow          float64 `json:"yearLow"`
+	YearHigh         float64 `json:"yearHigh"`
+	WeeklyReturn     float64 `json:"weeklyReturn"`
+	MonthlyReturn    float64 `json:"monthlyReturn"`
+	ThreeMonthReturn float64 `json:"3MonthReturn"`
+	YtdReturn        float64 `json:"ytdReturn"`
+	YearlyReturn     float64 `json:"yearlyReturn"`
+	ThreeYear        float64 `json:"3YearReturn"`
+	FiveYear         float64 `json:"5YearReturn"`
+	Symbol           string  `json:"symbol"`
 }
 
 type StockStatsKey string
 
 const (
 	StockStatsPreviousClose StockStatsKey = "previous_close"
-	StockStatsYtdReturn     StockStatsKey = "ytd_return"
-	StockStatsYearlyReturn  StockStatsKey = "yearly_return"
 	StockStatsMarketCap     StockStatsKey = "market_cap"
 	StockStatsFK            StockStatsKey = "fk"
 	StockStatsPDDD          StockStatsKey = "pddd"
 	StockStatsYearLow       StockStatsKey = "year_low"
 	StockStatsYearHigh      StockStatsKey = "year_high"
+	StockStatsWeeklyReturn  StockStatsKey = "weekly_return"
+	StockStatsMonthlyReturn StockStatsKey = "monthly_return"
+	StockStats3MonthReturn  StockStatsKey = "3_month_return"
+	StockStatsYtdReturn     StockStatsKey = "ytd_return"
+	StockStatsYearlyReturn  StockStatsKey = "yearly_return"
 	StockStats3YearReturn   StockStatsKey = "3_year_return"
 	StockStats5YearReturn   StockStatsKey = "5_year_return"
 	StockStatsLatestPrice   StockStatsKey = "latest_price"
