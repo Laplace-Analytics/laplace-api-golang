@@ -42,17 +42,19 @@ type Stock struct {
 type LocaleString map[Locale]string
 
 type StockDetail struct {
-	ID                   primitive.ObjectID `json:"id"`
-	AssetType            AssetType          `json:"assetType"`
-	AssetClass           AssetClass         `json:"assetClass"`
-	Name                 string             `json:"name"`
-	Symbol               string             `json:"symbol"`
-	Description          string             `json:"description"`
-	LocalizedDescription LocaleString       `json:"localized_description"`
-	Region               string             `json:"region"`
-	SectorId             primitive.ObjectID `json:"sectorId"`
-	IndustryId           primitive.ObjectID `json:"industryId"`
-	UpdatedDate          time.Time          `json:"updatedDate"`
+	ID                        primitive.ObjectID `json:"id"`
+	AssetType                 AssetType          `json:"assetType"`
+	AssetClass                AssetClass         `json:"assetClass"`
+	Name                      string             `json:"name"`
+	Symbol                    string             `json:"symbol"`
+	Description               string             `json:"description"`
+	LocalizedDescription      LocaleString       `json:"localized_description"`
+	ShortDescription          string             `json:"shortDescription"`
+	LocalizedShortDescription LocaleString       `json:"localizedShortDescription"`
+	Region                    string             `json:"region"`
+	SectorId                  primitive.ObjectID `json:"sectorId"`
+	IndustryId                primitive.ObjectID `json:"industryId"`
+	UpdatedDate               time.Time          `json:"updatedDate"`
 }
 
 type HistoricalPricePeriod string
