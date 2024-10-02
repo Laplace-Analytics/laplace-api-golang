@@ -1,27 +1,25 @@
-package client
+package laplace
 
 import (
 	"context"
 	"testing"
 
-	"finfree.co/laplace/utilities"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type FinancialFundamentalsTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestFinancialFundamentals(t *testing.T) {
 	suite.Run(t, &FinancialFundamentalsTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -31,7 +29,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -74,7 +72,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

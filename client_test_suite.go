@@ -1,4 +1,4 @@
-package utilities
+package laplace
 
 import (
 	"path/filepath"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const testConfig = "./utilities/test.env"
+const testConfig = "./test.env"
 
 type ClientTestSuite struct {
 	suite.Suite
@@ -19,7 +19,7 @@ func NewClientTestSuite() *ClientTestSuite {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	repoRoot, err := FindModuleRoot()
+	repoRoot, err := findModuleRoot(s.T())
 
 	if err != nil {
 		s.T().Fatalf("Could not find module root: %v", err)

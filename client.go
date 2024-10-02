@@ -1,4 +1,4 @@
-package client
+package laplace
 
 import (
 	"bufio"
@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,16 +19,35 @@ type Client struct {
 	logger  *logrus.Logger
 }
 
+type clientOption func(*Client)
+
+func WithLogger(logger *logrus.Logger) clientOption {
+	return func(c *Client) {
+		c.logger = logger
+	}
+}
+
 func NewClient(
-	cfg utilities.LaplaceConfiguration,
-	logger *logrus.Logger,
+	cfg LaplaceConfiguration,
+	opts ...clientOption,
 ) *Client {
-	return &Client{
+
+	defaultLogger := logrus.New()
+	defaultLogger.SetLevel(logrus.DebugLevel)
+	defaultLogger.Out = io.Discard
+
+	c := &Client{
 		cli:     &http.Client{},
 		baseUrl: cfg.BaseURL,
 		apiKey:  cfg.APIKey,
-		logger:  logger,
+		logger:  defaultLogger,
 	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
 }
 
 func sendRequest[T any](
@@ -97,9 +115,6 @@ func sendSSERequest[T any](
 
 	// Create a new context with cancellation
 	ctxWithCancel, cancel := context.WithCancel(ctx)
-
-	// Modify the request to use the new context
-	r = r.WithContext(ctxWithCancel)
 
 	// Start a goroutine to read the SSE stream
 	go func() {

@@ -1,27 +1,25 @@
-package client
+package laplace
 
 import (
 	"context"
 	"testing"
 
-	"finfree.co/laplace/utilities"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type FinancialRatiosTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestFinancialRatios(t *testing.T) {
 	suite.Run(t, &FinancialRatiosTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
 func (s *FinancialRatiosTestSuite) TestGetFinancialRatioComparison() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -31,7 +29,7 @@ func (s *FinancialRatiosTestSuite) TestGetFinancialRatioComparison() {
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -45,7 +43,7 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -55,7 +53,7 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

@@ -1,27 +1,25 @@
-package client
+package laplace
 
 import (
 	"context"
 	"testing"
 
-	"finfree.co/laplace/utilities"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type SearchTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestSearch(t *testing.T) {
 	suite.Run(t, &SearchTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
 func (s *SearchTestSuite) TestSearchStock() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -32,7 +30,7 @@ func (s *SearchTestSuite) TestSearchStock() {
 }
 
 func (s *SearchTestSuite) TestSearchIndustry() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -43,7 +41,7 @@ func (s *SearchTestSuite) TestSearchIndustry() {
 }
 
 func (s *SearchTestSuite) TestSearchAllTypes() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

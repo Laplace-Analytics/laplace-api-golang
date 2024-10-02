@@ -1,4 +1,4 @@
-package client
+package laplace
 
 import (
 	"context"
@@ -6,24 +6,29 @@ import (
 	"net/http"
 	"testing"
 
-	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type LaplaceClientTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestLaplaceClient(t *testing.T) {
 	suite.Run(t, &LaplaceClientTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
+func newTestClient(conf LaplaceConfiguration) *Client {
+	logger := logrus.New()
+
+	return NewClient(conf, WithLogger(logger))
+}
+
 func (s *LaplaceClientTestSuite) TestClient() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	req, err := http.NewRequest("GET", s.Config.BaseURL+"/api/v1/industry", nil)
 	s.Require().NoError(err)
@@ -38,7 +43,7 @@ func (s *LaplaceClientTestSuite) TestClient() {
 }
 
 func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	_, err := client.GetAllCollections(context.Background(), "aaa", LocaleTr)
 	require.Error(s.T(), err)
@@ -46,12 +51,12 @@ func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
 }
 
 func (s *LaplaceClientTestSuite) TestInvalidToken() {
-	invalidConfig := &utilities.LaplaceConfiguration{
+	invalidConfig := LaplaceConfiguration{
 		BaseURL: s.Config.BaseURL,
 		APIKey:  "invalid",
 	}
 
-	client := NewClient(*invalidConfig, logrus.New())
+	client := newTestClient(invalidConfig)
 
 	_, err := client.GetAllCollections(context.Background(), RegionTr, LocaleTr)
 	require.Error(s.T(), err)
@@ -59,7 +64,7 @@ func (s *LaplaceClientTestSuite) TestInvalidToken() {
 }
 
 func (s *LaplaceClientTestSuite) TestInvalidID() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	_, err := client.GetCollectionDetail(context.Background(), "invalid", RegionTr, LocaleTr)
 	require.Error(s.T(), err)

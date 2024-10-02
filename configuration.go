@@ -1,4 +1,4 @@
-package utilities
+package laplace
 
 import (
 	"os"
