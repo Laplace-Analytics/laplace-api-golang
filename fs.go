@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 )
 
-// FindModuleRoot finds the relative path to the root of the Go module.
-func FindModuleRoot() (string, error) {
+func findModuleRoot(t testing.TB) (string, error) {
+	t.Helper()
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", err

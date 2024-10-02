@@ -19,7 +19,7 @@ func NewClientTestSuite() *ClientTestSuite {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	repoRoot, err := FindModuleRoot()
+	repoRoot, err := findModuleRoot(s.T())
 
 	if err != nil {
 		s.T().Fatalf("Could not find module root: %v", err)
