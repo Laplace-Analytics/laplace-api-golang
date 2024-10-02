@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,7 +19,7 @@ func TestFinancialFundamentals(t *testing.T) {
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -30,7 +29,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -73,7 +72,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

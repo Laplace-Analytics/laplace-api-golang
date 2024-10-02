@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,7 +19,7 @@ func TestStocks(t *testing.T) {
 }
 
 func (s *StocksTestSuite) TestGetAllStocks() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -31,7 +30,7 @@ func (s *StocksTestSuite) TestGetAllStocks() {
 }
 
 func (s *StocksTestSuite) TestGetStockDetailByID() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -42,7 +41,7 @@ func (s *StocksTestSuite) TestGetStockDetailByID() {
 }
 
 func (s *StocksTestSuite) TestGetStockDetailBySymbol() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -53,7 +52,7 @@ func (s *StocksTestSuite) TestGetStockDetailBySymbol() {
 }
 
 func (s *StocksTestSuite) TestGetHistoricalPrices() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

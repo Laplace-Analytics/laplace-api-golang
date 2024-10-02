@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/samber/lo"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,7 +21,7 @@ func TestCustomTheme(t *testing.T) {
 }
 
 func (s *CustomThemeTestSuite) TestGetAllCustomThemes() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -33,7 +32,7 @@ func (s *CustomThemeTestSuite) TestGetAllCustomThemes() {
 }
 
 func (s *CustomThemeTestSuite) TestCreateUpdateDeleteCustomTheme() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 

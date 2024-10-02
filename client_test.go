@@ -21,8 +21,14 @@ func TestLaplaceClient(t *testing.T) {
 	})
 }
 
+func newTestClient(conf LaplaceConfiguration) *Client {
+	logger := logrus.New()
+
+	return NewClient(conf, WithLogger(logger))
+}
+
 func (s *LaplaceClientTestSuite) TestClient() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	req, err := http.NewRequest("GET", s.Config.BaseURL+"/api/v1/industry", nil)
 	s.Require().NoError(err)
@@ -37,7 +43,7 @@ func (s *LaplaceClientTestSuite) TestClient() {
 }
 
 func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	_, err := client.GetAllCollections(context.Background(), "aaa", LocaleTr)
 	require.Error(s.T(), err)
@@ -45,12 +51,12 @@ func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
 }
 
 func (s *LaplaceClientTestSuite) TestInvalidToken() {
-	invalidConfig := &LaplaceConfiguration{
+	invalidConfig := LaplaceConfiguration{
 		BaseURL: s.Config.BaseURL,
 		APIKey:  "invalid",
 	}
 
-	client := NewClient(*invalidConfig, logrus.New())
+	client := newTestClient(invalidConfig)
 
 	_, err := client.GetAllCollections(context.Background(), RegionTr, LocaleTr)
 	require.Error(s.T(), err)
@@ -58,7 +64,7 @@ func (s *LaplaceClientTestSuite) TestInvalidToken() {
 }
 
 func (s *LaplaceClientTestSuite) TestInvalidID() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	_, err := client.GetCollectionDetail(context.Background(), "invalid", RegionTr, LocaleTr)
 	require.Error(s.T(), err)

@@ -19,16 +19,35 @@ type Client struct {
 	logger  *logrus.Logger
 }
 
+type clientOption func(*Client)
+
+func WithLogger(logger *logrus.Logger) clientOption {
+	return func(c *Client) {
+		c.logger = logger
+	}
+}
+
 func NewClient(
 	cfg LaplaceConfiguration,
-	logger *logrus.Logger,
+	opts ...clientOption,
 ) *Client {
-	return &Client{
+
+	defaultLogger := logrus.New()
+	defaultLogger.SetLevel(logrus.DebugLevel)
+	defaultLogger.Out = io.Discard
+
+	c := &Client{
 		cli:     &http.Client{},
 		baseUrl: cfg.BaseURL,
 		apiKey:  cfg.APIKey,
-		logger:  logger,
+		logger:  defaultLogger,
 	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
 }
 
 func sendRequest[T any](

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,7 +19,7 @@ func TestCollections(t *testing.T) {
 }
 
 func (s *CollectionsTestSuite) TestGetAllIndustries() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -31,7 +30,7 @@ func (s *CollectionsTestSuite) TestGetAllIndustries() {
 }
 
 func (s *CollectionsTestSuite) TestGetIndustryDetails() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
@@ -42,7 +41,7 @@ func (s *CollectionsTestSuite) TestGetIndustryDetails() {
 }
 
 func (s *CollectionsTestSuite) TestGetSectorDetails() {
-	client := NewClient(s.Config, logrus.New())
+	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
