@@ -1,23 +1,22 @@
-package client
+package laplace
 
 // import (
 // 	"context"
 // 	"testing"
 // 	"time"
 
-// 	"finfree.co/laplace/utilities"
 // 	"github.com/sirupsen/logrus"
 // 	"github.com/stretchr/testify/require"
 // 	"github.com/stretchr/testify/suite"
 // )
 
 // type LivePriceTestSuite struct {
-// 	*utilities.ClientTestSuite
+// 	*ClientTestSuite
 // }
 
 // func TestLivePrice(t *testing.T) {
 // 	suite.Run(t, &LivePriceTestSuite{
-// 		utilities.NewClientTestSuite(),
+// 		NewClientTestSuite(),
 // 	})
 // }
 

@@ -1,10 +1,9 @@
-package client
+package laplace
 
 import (
 	"context"
 	"testing"
 
-	"finfree.co/laplace/utilities"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -13,12 +12,12 @@ import (
 )
 
 type CustomThemeTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestCustomTheme(t *testing.T) {
 	suite.Run(t, &CustomThemeTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 

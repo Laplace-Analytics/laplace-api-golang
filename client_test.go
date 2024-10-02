@@ -1,4 +1,4 @@
-package client
+package laplace
 
 import (
 	"context"
@@ -6,19 +6,18 @@ import (
 	"net/http"
 	"testing"
 
-	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type LaplaceClientTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestLaplaceClient(t *testing.T) {
 	suite.Run(t, &LaplaceClientTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
@@ -46,7 +45,7 @@ func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
 }
 
 func (s *LaplaceClientTestSuite) TestInvalidToken() {
-	invalidConfig := &utilities.LaplaceConfiguration{
+	invalidConfig := &LaplaceConfiguration{
 		BaseURL: s.Config.BaseURL,
 		APIKey:  "invalid",
 	}

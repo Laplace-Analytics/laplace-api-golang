@@ -1,4 +1,4 @@
-package client
+package laplace
 
 import (
 	"bufio"
@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,7 +20,7 @@ type Client struct {
 }
 
 func NewClient(
-	cfg utilities.LaplaceConfiguration,
+	cfg LaplaceConfiguration,
 	logger *logrus.Logger,
 ) *Client {
 	return &Client{
@@ -97,9 +96,6 @@ func sendSSERequest[T any](
 
 	// Create a new context with cancellation
 	ctxWithCancel, cancel := context.WithCancel(ctx)
-
-	// Modify the request to use the new context
-	r = r.WithContext(ctxWithCancel)
 
 	// Start a goroutine to read the SSE stream
 	go func() {

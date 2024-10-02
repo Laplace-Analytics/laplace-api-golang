@@ -1,22 +1,21 @@
-package client
+package laplace
 
 import (
 	"context"
 	"testing"
 
-	"finfree.co/laplace/utilities"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type CollectionsTestSuite struct {
-	*utilities.ClientTestSuite
+	*ClientTestSuite
 }
 
 func TestCollections(t *testing.T) {
 	suite.Run(t, &CollectionsTestSuite{
-		utilities.NewClientTestSuite(),
+		NewClientTestSuite(),
 	})
 }
 
