@@ -1,4 +1,4 @@
-module finfree.co/laplace
+module github.com/Laplace-Analytics/laplace-api-golang
 
 go 1.22.1
 
