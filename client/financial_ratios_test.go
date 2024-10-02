@@ -38,6 +38,10 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 	resp, err := client.GetHistoricalRatios(ctx, "TUPRS", []HistoricalRatiosKey{HistoricalRatiosKeyPriceToEarningsRatio}, RegionTr)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), resp)
+	for _, formatting := range resp.Formatting {
+		require.NotEmpty(s.T(), formatting)
+		require.NotEmpty(s.T(), formatting.Name)
+	}
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {

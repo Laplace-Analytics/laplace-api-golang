@@ -58,6 +58,7 @@ type StockHistoricalRatiosValue struct {
 }
 
 type StockHistoricalRatiosFormatting struct {
+	Name        string  `json:"name"`
 	Slug        string  `json:"slug"`
 	Precision   int     `json:"precision"`
 	Multiplier  float64 `json:"multiplier"`
