@@ -20,12 +20,16 @@ type StockDividend struct {
 }
 
 type StockStats struct {
+	LatestPrice      float64 `json:"latestPrice"`
 	PreviousClose    float64 `json:"previousClose"`
 	MarketCap        float64 `json:"marketCap"`
 	PeRatio          float64 `json:"peRatio"`
 	PbRatio          float64 `json:"pbRatio"`
+	DayHigh          float64 `json:"dayHigh"`
+	DayLow           float64 `json:"dayLow"`
 	YearLow          float64 `json:"yearLow"`
 	YearHigh         float64 `json:"yearHigh"`
+	DailyChange      float64 `json:"dailyChange"`
 	WeeklyReturn     float64 `json:"weeklyReturn"`
 	MonthlyReturn    float64 `json:"monthlyReturn"`
 	ThreeMonthReturn float64 `json:"3MonthReturn"`
@@ -39,12 +43,16 @@ type StockStats struct {
 type StockStatsKey string
 
 const (
+	StockStatsLatestPrice   StockStatsKey = "latest_price"
 	StockStatsPreviousClose StockStatsKey = "previous_close"
 	StockStatsMarketCap     StockStatsKey = "market_cap"
 	StockStatsFK            StockStatsKey = "fk"
 	StockStatsPDDD          StockStatsKey = "pddd"
+	StockStatsDayLow        StockStatsKey = "day_low"
+	StockStatsDayHigh       StockStatsKey = "day_high"
 	StockStatsYearLow       StockStatsKey = "year_low"
 	StockStatsYearHigh      StockStatsKey = "year_high"
+	StockStatsDailyChange   StockStatsKey = "daily_change"
 	StockStatsWeeklyReturn  StockStatsKey = "weekly_return"
 	StockStatsMonthlyReturn StockStatsKey = "monthly_return"
 	StockStats3MonthReturn  StockStatsKey = "3_month_return"
@@ -52,7 +60,6 @@ const (
 	StockStatsYearlyReturn  StockStatsKey = "yearly_return"
 	StockStats3YearReturn   StockStatsKey = "3_year_return"
 	StockStats5YearReturn   StockStatsKey = "5_year_return"
-	StockStatsLatestPrice   StockStatsKey = "latest_price"
 )
 
 type TopMover struct {
