@@ -65,3 +65,14 @@ func (s *StocksTestSuite) TestGetHistoricalPrices() {
 		require.NotEmpty(s.T(), price)
 	}
 }
+
+func (s *StocksTestSuite) TestGetStockRestrictions() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStockRestrictions(ctx, "TUPRS", RegionTr)
+	require.NoError(s.T(), err)
+
+	require.NotNil(s.T(), resp)
+}

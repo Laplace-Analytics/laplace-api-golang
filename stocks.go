@@ -90,6 +90,14 @@ type PriceDataPoint struct {
 	Open  float64 `json:"o"`
 }
 
+type StockRestriction struct {
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	StartDate   time.Time `json:"startDate"`
+	EndDate     time.Time `json:"endDate"`
+}
+
 func (c *Client) GetAllStocks(ctx context.Context, region Region) ([]Stock, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/all", c.baseUrl), nil)
 	if err != nil {
@@ -164,6 +172,25 @@ func (c *Client) GetHistoricalPrices(ctx context.Context, symbols []string, regi
 	resp, err := sendRequest[[]StockPriceGraph](ctx, c, req)
 	if err != nil {
 		return []StockPriceGraph{}, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region Region) ([]StockRestriction, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions", c.baseUrl), nil)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]StockRestriction](ctx, c, req)
+	if err != nil {
+		return []StockRestriction{}, err
 	}
 
 	return resp, nil
