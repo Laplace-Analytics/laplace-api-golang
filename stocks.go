@@ -59,7 +59,21 @@ type StockDetail struct {
 	IndustryId                primitive.ObjectID `json:"industryId"`
 	UpdatedDate               time.Time          `json:"updatedDate"`
 	Active                    bool               `json:"active"`
+	Markets                   []Market           `json:"markets,omitempty"`
 }
+
+type Market string
+
+const (
+	MarketYildiz      Market = "YILDIZ"
+	MarketAna         Market = "ANA"
+	MarketAlt         Market = "ALT"
+	MarketYakinIzleme Market = "YAKIN_IZLEME"
+	MarketPOIP        Market = "POIP"
+	MarketFon         Market = "FON"
+	MarketGirisim     Market = "GIRISIM"
+	MarketEmtia       Market = "EMTIA"
+)
 
 type HistoricalPricePeriod string
 
