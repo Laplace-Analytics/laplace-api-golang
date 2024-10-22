@@ -119,6 +119,20 @@ type StockRestriction struct {
 	EndDate     time.Time `json:"endDate"`
 }
 
+type TickRule struct {
+	BasePrice       float64        `json:"basePrice"`
+	AdditionalPrice int            `json:"additionalPrice"`
+	LowerPriceLimit float64        `json:"lowerPriceLimit"`
+	UpperPriceLimit float64        `json:"upperPriceLimit"`
+	Rules           []TickSizeRule `json:"rules"`
+}
+
+type TickSizeRule struct {
+	PriceFrom float64 `json:"priceFrom"`
+	PriceTo   float64 `json:"priceTo"`
+	TickSize  float64 `json:"tickSize"`
+}
+
 func (c *Client) GetAllStocks(ctx context.Context, region Region) ([]Stock, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/all", c.baseUrl), nil)
 	if err != nil {
@@ -254,6 +268,25 @@ func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region
 	resp, err := sendRequest[[]StockRestriction](ctx, c, req)
 	if err != nil {
 		return []StockRestriction{}, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
+	if err != nil {
+		return TickRule{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[TickRule](ctx, c, req)
+	if err != nil {
+		return TickRule{}, err
 	}
 
 	return resp, nil

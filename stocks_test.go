@@ -100,3 +100,14 @@ func (s *StocksTestSuite) TestGetStockRestrictions() {
 
 	require.NotNil(s.T(), resp)
 }
+
+func (s *StocksTestSuite) TestGetTickRules() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetTickRules(ctx, "TUPRS", RegionTr)
+	require.NoError(s.T(), err)
+
+	require.NotEmpty(s.T(), resp.Rules)
+}
