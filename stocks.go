@@ -39,6 +39,7 @@ type Stock struct {
 	IndustryId  primitive.ObjectID `json:"industryId"`
 	UpdatedDate time.Time          `json:"updatedDate"`
 	DailyChange float64            `json:"dailyChange,omitempty"`
+	Active      bool               `json:"active"`
 }
 
 type LocaleString map[Locale]string
@@ -57,6 +58,7 @@ type StockDetail struct {
 	SectorId                  primitive.ObjectID `json:"sectorId"`
 	IndustryId                primitive.ObjectID `json:"industryId"`
 	UpdatedDate               time.Time          `json:"updatedDate"`
+	Active                    bool               `json:"active"`
 }
 
 type HistoricalPricePeriod string
