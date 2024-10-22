@@ -66,6 +66,30 @@ func (s *StocksTestSuite) TestGetHistoricalPrices() {
 	}
 }
 
+func (s *StocksTestSuite) TestGetCustomHistoricalPrices() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetCustomHistoricalPrices(ctx, "TUPRS", RegionTr, "2024-01-01", "2024-03-01", HistoricalPriceIntervalOneDay, false)
+	require.NoError(s.T(), err)
+
+	require.NotEmpty(s.T(), resp)
+
+	for _, price := range resp {
+		require.NotEmpty(s.T(), price)
+	}
+
+	resp, err = client.GetCustomHistoricalPrices(ctx, "TUPRS", RegionTr, "2024-01-01 10:00:00", "2024-01-02 10:00:00", HistoricalPriceIntervalOneHour, true)
+	require.NoError(s.T(), err)
+
+	require.NotEmpty(s.T(), resp)
+
+	for _, price := range resp {
+		require.NotEmpty(s.T(), price)
+	}
+}
+
 func (s *StocksTestSuite) TestGetStockRestrictions() {
 	client := newTestClient(s.Config)
 

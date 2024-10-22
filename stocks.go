@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +71,25 @@ const (
 	HistoricalPricePeriodThreeYear  HistoricalPricePeriod = "3Y"
 	HistoricalPricePeriodFiveYear   HistoricalPricePeriod = "5Y"
 )
+
+type HistoricalPriceInterval string
+
+const (
+	HistoricalPriceIntervalOneMinute    HistoricalPriceInterval = "1m"
+	HistoricalPriceIntervalFiveMinute   HistoricalPriceInterval = "5m"
+	HistoricalPriceIntervalThirtyMinute HistoricalPriceInterval = "30m"
+	HistoricalPriceIntervalOneHour      HistoricalPriceInterval = "1h"
+	HistoricalPriceIntervalOneDay       HistoricalPriceInterval = "24h"
+)
+
+type HistoricalPriceDate struct {
+	Year   int
+	Month  int
+	Day    int
+	Hour   int
+	Minute int
+	Second int
+}
 
 type StockPriceGraph struct {
 	Symbol     string           `json:"symbol"`
@@ -175,6 +196,48 @@ func (c *Client) GetHistoricalPrices(ctx context.Context, symbols []string, regi
 	}
 
 	return resp, nil
+}
+
+func (c *Client) GetCustomHistoricalPrices(ctx context.Context, symbol string, region Region, fromDate string, toDate string, interval HistoricalPriceInterval, detail bool) ([]PriceDataPoint, error) {
+	if err := validateCustomHistoricalPriceDate(fromDate); err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	if err := validateCustomHistoricalPriceDate(toDate); err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/price/interval", c.baseUrl), nil)
+	if err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("stock", symbol)
+	q.Add("region", string(region))
+	q.Add("fromDate", fromDate)
+	q.Add("toDate", toDate)
+	q.Add("interval", string(interval))
+	q.Add("detail", strconv.FormatBool(detail))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]PriceDataPoint](ctx, c, req)
+	if err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	return resp, nil
+
+}
+
+func validateCustomHistoricalPriceDate(date string) error {
+	pattern := `^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$`
+	matched, err := regexp.MatchString(pattern, date)
+	if err != nil || !matched {
+		return fmt.Errorf("invalid date format, allowed formats: YYYY-MM-DD, YYYY-MM-DD HH:MM:SS")
+	}
+
+	return nil
 }
 
 func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region Region) ([]StockRestriction, error) {
