@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,6 +39,7 @@ type Stock struct {
 	IndustryId  primitive.ObjectID `json:"industryId"`
 	UpdatedDate time.Time          `json:"updatedDate"`
 	DailyChange float64            `json:"dailyChange,omitempty"`
+	Active      bool               `json:"active"`
 }
 
 type LocaleString map[Locale]string
@@ -55,7 +58,22 @@ type StockDetail struct {
 	SectorId                  primitive.ObjectID `json:"sectorId"`
 	IndustryId                primitive.ObjectID `json:"industryId"`
 	UpdatedDate               time.Time          `json:"updatedDate"`
+	Active                    bool               `json:"active"`
+	Markets                   []Market           `json:"markets,omitempty"`
 }
+
+type Market string
+
+const (
+	MarketYildiz      Market = "YILDIZ"
+	MarketAna         Market = "ANA"
+	MarketAlt         Market = "ALT"
+	MarketYakinIzleme Market = "YAKIN_IZLEME"
+	MarketPOIP        Market = "POIP"
+	MarketFon         Market = "FON"
+	MarketGirisim     Market = "GIRISIM"
+	MarketEmtia       Market = "EMTIA"
+)
 
 type HistoricalPricePeriod string
 
@@ -69,6 +87,25 @@ const (
 	HistoricalPricePeriodThreeYear  HistoricalPricePeriod = "3Y"
 	HistoricalPricePeriodFiveYear   HistoricalPricePeriod = "5Y"
 )
+
+type HistoricalPriceInterval string
+
+const (
+	HistoricalPriceIntervalOneMinute    HistoricalPriceInterval = "1m"
+	HistoricalPriceIntervalFiveMinute   HistoricalPriceInterval = "5m"
+	HistoricalPriceIntervalThirtyMinute HistoricalPriceInterval = "30m"
+	HistoricalPriceIntervalOneHour      HistoricalPriceInterval = "1h"
+	HistoricalPriceIntervalOneDay       HistoricalPriceInterval = "24h"
+)
+
+type HistoricalPriceDate struct {
+	Year   int
+	Month  int
+	Day    int
+	Hour   int
+	Minute int
+	Second int
+}
 
 type StockPriceGraph struct {
 	Symbol     string           `json:"symbol"`
@@ -88,6 +125,28 @@ type PriceDataPoint struct {
 	High  float64 `json:"h"`
 	Low   float64 `json:"l"`
 	Open  float64 `json:"o"`
+}
+
+type StockRestriction struct {
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	StartDate   time.Time `json:"startDate"`
+	EndDate     time.Time `json:"endDate"`
+}
+
+type TickRule struct {
+	BasePrice       float64        `json:"basePrice"`
+	AdditionalPrice int            `json:"additionalPrice"`
+	LowerPriceLimit float64        `json:"lowerPriceLimit"`
+	UpperPriceLimit float64        `json:"upperPriceLimit"`
+	Rules           []TickSizeRule `json:"rules"`
+}
+
+type TickSizeRule struct {
+	PriceFrom float64 `json:"priceFrom"`
+	PriceTo   float64 `json:"priceTo"`
+	TickSize  float64 `json:"tickSize"`
 }
 
 func (c *Client) GetAllStocks(ctx context.Context, region Region) ([]Stock, error) {
@@ -164,6 +223,86 @@ func (c *Client) GetHistoricalPrices(ctx context.Context, symbols []string, regi
 	resp, err := sendRequest[[]StockPriceGraph](ctx, c, req)
 	if err != nil {
 		return []StockPriceGraph{}, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) GetCustomHistoricalPrices(ctx context.Context, symbol string, region Region, fromDate string, toDate string, interval HistoricalPriceInterval, detail bool) ([]PriceDataPoint, error) {
+	if err := validateCustomHistoricalPriceDate(fromDate); err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	if err := validateCustomHistoricalPriceDate(toDate); err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/price/interval", c.baseUrl), nil)
+	if err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("stock", symbol)
+	q.Add("region", string(region))
+	q.Add("fromDate", fromDate)
+	q.Add("toDate", toDate)
+	q.Add("interval", string(interval))
+	q.Add("detail", strconv.FormatBool(detail))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]PriceDataPoint](ctx, c, req)
+	if err != nil {
+		return []PriceDataPoint{}, err
+	}
+
+	return resp, nil
+
+}
+
+func validateCustomHistoricalPriceDate(date string) error {
+	pattern := `^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$`
+	matched, err := regexp.MatchString(pattern, date)
+	if err != nil || !matched {
+		return fmt.Errorf("invalid date format, allowed formats: YYYY-MM-DD, YYYY-MM-DD HH:MM:SS")
+	}
+
+	return nil
+}
+
+func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region Region) ([]StockRestriction, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions", c.baseUrl), nil)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]StockRestriction](ctx, c, req)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	return resp, nil
+}
+
+func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
+	if err != nil {
+		return TickRule{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[TickRule](ctx, c, req)
+	if err != nil {
+		return TickRule{}, err
 	}
 
 	return resp, nil
