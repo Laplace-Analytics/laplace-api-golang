@@ -38,6 +38,10 @@ type CreateCustomThemeParams struct {
 	MetaData       map[string]any       `json:"meta_data,omitempty" bson:"meta_data,omitempty"`
 }
 
+type CreateCustomThemeResponse struct {
+	ID string `json:"id"`
+}
+
 func (c *Client) CreateCustomTheme(ctx context.Context, params CreateCustomThemeParams) (*primitive.ObjectID, error) {
 	bodyJSON, err := json.Marshal(params)
 	if err != nil {
@@ -50,12 +54,12 @@ func (c *Client) CreateCustomTheme(ctx context.Context, params CreateCustomTheme
 		return nil, err
 	}
 
-	resp, err := sendRequest[string](ctx, c, req)
+	resp, err := sendRequest[CreateCustomThemeResponse](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := primitive.ObjectIDFromHex(resp)
+	id, err := primitive.ObjectIDFromHex(resp.ID)
 	if err != nil {
 		return nil, err
 	}
