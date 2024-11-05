@@ -23,10 +23,22 @@ func (s *StocksTestSuite) TestGetAllStocks() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetAllStocks(ctx, RegionTr)
+	resp, err := client.GetAllStocks(ctx, RegionTr, 0, 0)
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)
+}
+
+func (s *StocksTestSuite) TestGetAllStocksPaginated() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetAllStocks(ctx, RegionTr, 5, 10)
+	require.NoError(s.T(), err)
+
+	require.NotEmpty(s.T(), resp)
+	require.Equal(s.T(), 10, len(resp))
 }
 
 func (s *StocksTestSuite) TestGetStockDetailByID() {

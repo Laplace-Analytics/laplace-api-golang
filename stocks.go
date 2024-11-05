@@ -149,14 +149,18 @@ type TickSizeRule struct {
 	TickSize  float64 `json:"tickSize"`
 }
 
-func (c *Client) GetAllStocks(ctx context.Context, region Region) ([]Stock, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/all", c.baseUrl), nil)
+func (c *Client) GetAllStocks(ctx context.Context, region Region, page int, pageSize int) ([]Stock, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/all", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	q := req.URL.Query()
 	q.Add("region", string(region))
+	if pageSize > 0 {
+		q.Add("page", strconv.Itoa(page))
+		q.Add("pageSize", strconv.Itoa(pageSize))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]Stock](ctx, c, req)

@@ -36,7 +36,7 @@ func (s *CustomThemeTestSuite) TestCreateUpdateDeleteCustomTheme() {
 
 	ctx := context.Background()
 
-	stocks, err := client.GetAllStocks(ctx, RegionTr)
+	stocks, err := client.GetAllStocks(ctx, RegionTr, 0, 0)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), stocks)
 
