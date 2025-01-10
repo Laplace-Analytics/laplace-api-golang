@@ -16,11 +16,12 @@ import (
 type AssetType string
 
 const (
-	AssetTypeStock     AssetType = "stock"
-	AssetTypeForex     AssetType = "forex"
-	AssetTypeIndex     AssetType = "index"
-	AssetTypeEtf       AssetType = "etf"
-	AssetTypeCommodity AssetType = "commodity"
+	AssetTypeStock       AssetType = "stock"
+	AssetTypeForex       AssetType = "forex"
+	AssetTypeIndex       AssetType = "index"
+	AssetTypeEtf         AssetType = "etf"
+	AssetTypeCommodity   AssetType = "commodity"
+	AssetTypeStockRights AssetType = "stock_rights"
 )
 
 type AssetClass string
