@@ -69,6 +69,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 	require.NotEqual(s.T(), currentStockStats.YearlyReturn, 0.0)
 	require.NotEqual(s.T(), currentStockStats.ThreeYear, 0.0)
 	require.NotEqual(s.T(), currentStockStats.FiveYear, 0.0)
+	require.NotEqual(s.T(), currentStockStats.DayOpen, 0.0)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStatsV2() {
@@ -95,6 +96,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStatsV2() {
 	require.NotEqual(s.T(), currentStockStats.YearlyReturn, 0.0)
 	require.NotEqual(s.T(), currentStockStats.LowerPriceLimit, 0.0)
 	require.NotEqual(s.T(), currentStockStats.UpperPriceLimit, 0.0)
+	require.NotEqual(s.T(), currentStockStats.DayOpen, 0.0)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {

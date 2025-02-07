@@ -38,6 +38,7 @@ type StockStats struct {
 	ThreeYear        float64 `json:"3YearReturn"`
 	FiveYear         float64 `json:"5YearReturn"`
 	Symbol           string  `json:"symbol"`
+	DayOpen          float64 `json:"dayOpen"`
 }
 
 type StockStatsKey string
@@ -83,6 +84,7 @@ type StockStatsV2 struct {
 	DayLow           float64 `json:"dayLow,omitempty"`
 	LowerPriceLimit  Price   `json:"lowerPriceLimit,omitempty"`
 	UpperPriceLimit  Price   `json:"upperPriceLimit,omitempty"`
+	DayOpen          float64 `json:"dayOpen,omitempty"`
 }
 
 type Price float64
