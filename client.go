@@ -36,8 +36,13 @@ func NewClient(
 	defaultLogger.SetLevel(logrus.DebugLevel)
 	defaultLogger.Out = io.Discard
 
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig.InsecureSkipVerify = true
+
 	c := &Client{
-		cli:     &http.Client{},
+		cli: &http.Client{
+			Transport: transport,
+		},
 		baseUrl: cfg.BaseURL,
 		apiKey:  cfg.APIKey,
 		logger:  defaultLogger,
