@@ -33,32 +33,37 @@ func WrapError(err error) error {
 func getLaplaceError(httpErr *LaplaceHTTPError) {
 	switch httpErr.HTTPStatus {
 	case http.StatusForbidden:
-		switch httpErr.Message {
-		case "{\"message\":\"you don't have access to this endpoint\"}\n":
+		switch httpErr.Message.Message {
+		case "you don't have access to this endpoint":
 			httpErr.InternalError = ErrYouDoNotHaveAccessToEndpoint
-		case "{\"message\":\"endpoint is not active\"}\n":
+		case "endpoint is not active":
 			httpErr.InternalError = ErrEndpointIsNotActive
 		}
-		if strings.Contains(httpErr.Message, "limit exceeded") {
+		if strings.Contains(httpErr.Message.Message, "limit exceeded") {
 			httpErr.InternalError = ErrLimitExceeded
 		}
 	case http.StatusBadRequest:
-		switch httpErr.Message {
-		case "{\"message\":\"invalid id\"}\n":
+		switch httpErr.Message.Message {
+		case "invalid id":
 			httpErr.InternalError = ErrInvalidID
 		}
 	case http.StatusUnauthorized:
-		switch httpErr.Message {
-		case "{\"message\":\"this token is not valid\"}\n":
+		switch httpErr.Message.Message {
+		case "invalid token":
 			httpErr.InternalError = ErrInvalidToken
 		}
 	}
 }
 
 type LaplaceHTTPError struct {
-	HTTPStatus    int    `json:"code"`
-	Message       string `json:"msg"`
-	InternalError error  `json:"-"`
+	HTTPStatus    int                 `json:"code"`
+	Message       LaplaceHTTPErrorMsg `json:"msg"`
+	InternalError error               `json:"-"`
+}
+
+type LaplaceHTTPErrorMsg struct {
+	Message   string `json:"message"`
+	ErrorCode string `json:"error_code"`
 }
 
 func (e *LaplaceHTTPError) Error() string {
@@ -100,6 +105,10 @@ func (e *LaplaceHTTPError) WithInternalError(err error) *LaplaceHTTPError {
 func HttpError(httpStatus int, fmtString string, args ...interface{}) *LaplaceHTTPError {
 	return &LaplaceHTTPError{
 		HTTPStatus: httpStatus,
-		Message:    fmt.Sprintf(fmtString, args...),
+		Message: LaplaceHTTPErrorMsg{
+			Message:   fmt.Sprintf(fmtString, args...),
+			ErrorCode: "",
+		},
+		InternalError: nil,
 	}
 }

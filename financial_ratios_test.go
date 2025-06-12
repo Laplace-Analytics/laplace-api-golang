@@ -23,7 +23,7 @@ func (s *FinancialRatiosTestSuite) TestGetFinancialRatioComparison() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetFinancialRatioComparison(ctx, "TUPRS", RegionTr)
+	resp, err := client.GetFinancialRatioComparison(ctx, "TUPRS", RegionTr, PeerTypeSector)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), resp)
 }
@@ -36,9 +36,17 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 	resp, err := client.GetHistoricalRatios(ctx, "TUPRS", []HistoricalRatiosKey{HistoricalRatiosKeyPriceToEarningsRatio}, RegionTr)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), resp)
-	for _, formatting := range resp.Formatting {
-		require.NotEmpty(s.T(), formatting)
-		require.NotEmpty(s.T(), formatting.Name)
+
+	for _, item := range resp {
+		require.NotEmpty(s.T(), item.Items)
+		require.NotEmpty(s.T(), item.FinalValue)
+		require.NotEmpty(s.T(), item.ThreeYearGrowth)
+		require.NotEmpty(s.T(), item.YearGrowth)
+		require.NotEmpty(s.T(), item.FinalSectorValue)
+		require.NotEmpty(s.T(), item.Slug)
+		require.NotEmpty(s.T(), item.Currency)
+		require.NotEmpty(s.T(), item.Format)
+		require.NotEmpty(s.T(), item.Name)
 	}
 }
 
@@ -65,7 +73,7 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
 		Year:  2023,
 		Month: 1,
 		Day:   1,
-	}, FinancialSheetBalanceSheet, FinancialSheetPeriodAnnual, CurrencyEUR, RegionTr)
+	}, FinancialSheetBalanceSheet, FinancialSheetPeriodAnnual, CurrencyTRY, RegionTr)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), resp)
 }
