@@ -72,9 +72,14 @@ func sendRequest[T any](
 	}
 
 	if res.StatusCode != http.StatusOK {
+		var msg LaplaceHTTPErrorMsg
+		if err := json.Unmarshal(body, &msg); err != nil {
+			return resp, err
+		}
+
 		httpErr := &LaplaceHTTPError{
 			HTTPStatus: res.StatusCode,
-			Message:    string(body),
+			Message:    msg,
 		}
 		return resp, WrapError(httpErr)
 	}

@@ -5,24 +5,32 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 )
 
-type StockSectorFinancialRatioComparison struct {
-	MetricName      string                                      `json:"metric_name"`
-	NormalizedValue float64                                     `json:"normalizedValue"`
-	Details         []StockSectorFinancialRatioComparisonDetail `json:"details"`
+type StockPeerFinancialRatioComparison struct {
+	MetricName      string                                  `json:"metricName"`
+	NormalizedValue float64                                 `json:"normalizedValue"`
+	Data            []StockPeerFinancialRatioComparisonData `json:"data"`
 }
 
-type StockSectorFinancialRatioComparisonDetail struct {
-	Slug          string  `json:"slug"`
-	Value         float64 `json:"value"`
-	SectorAverage float64 `json:"sectorAverage"`
+type StockPeerFinancialRatioComparisonData struct {
+	Slug    string  `json:"slug"`
+	Value   float64 `json:"value"`
+	Average float64 `json:"average"`
 }
 
-func (c *Client) GetFinancialRatioComparison(ctx context.Context, symbol string, region Region) ([]StockSectorFinancialRatioComparison, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/financial-ratio-comparison", c.baseUrl), nil)
+type PeerType string
+
+const (
+	PeerTypeSector   PeerType = "sector"
+	PeerTypeIndustry PeerType = "industry"
+)
+
+func (c *Client) GetFinancialRatioComparison(ctx context.Context, symbol string, region Region, peerType PeerType) ([]StockPeerFinancialRatioComparison, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/financial-ratio-comparison", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -30,9 +38,10 @@ func (c *Client) GetFinancialRatioComparison(ctx context.Context, symbol string,
 	q := req.URL.Query()
 	q.Add("symbol", symbol)
 	q.Add("region", string(region))
+	q.Add("peerType", string(peerType))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[[]StockSectorFinancialRatioComparison](ctx, c, req)
+	resp, err := sendRequest[[]StockPeerFinancialRatioComparison](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -41,15 +50,21 @@ func (c *Client) GetFinancialRatioComparison(ctx context.Context, symbol string,
 }
 
 type StockHistoricalRatios struct {
-	Symbol     string                                     `json:"symbol"`
-	Data       []StockHistoricalRatiosData                `json:"data"`
-	Formatting map[string]StockHistoricalRatiosFormatting `json:"formatting"`
+	Items            []StockHistoricalRatiosData `json:"items"`
+	FinalValue       float64                     `json:"finalValue"`
+	ThreeYearGrowth  float64                     `json:"threeYearGrowth"`
+	YearGrowth       float64                     `json:"yearGrowth"`
+	FinalSectorValue float64                     `json:"finalSectorValue"`
+	Slug             string                      `json:"slug"`
+	Currency         string                      `json:"currency"`
+	Format           string                      `json:"format"`
+	Name             string                      `json:"name"`
 }
 
 type StockHistoricalRatiosData struct {
-	FiscalYear    int                                   `json:"fiscalYear"`
-	FiscalQuarter int                                   `json:"fiscalQuarter"`
-	Values        map[string]StockHistoricalRatiosValue `json:"values"`
+	Period     string  `json:"period"`
+	Value      float64 `json:"value"`
+	SectorMean float64 `json:"sectorMean"`
 }
 
 type StockHistoricalRatiosValue struct {
@@ -77,10 +92,10 @@ const (
 	HistoricalRatiosKeyReturnOnCapital      HistoricalRatiosKey = "roic"
 )
 
-func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []HistoricalRatiosKey, region Region) (StockHistoricalRatios, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/historical-ratios", c.baseUrl), nil)
+func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []HistoricalRatiosKey, region Region) ([]StockHistoricalRatios, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-ratios", c.baseUrl), nil)
 	if err != nil {
-		return StockHistoricalRatios{}, err
+		return nil, err
 	}
 
 	q := req.URL.Query()
@@ -91,28 +106,29 @@ func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []
 	}), ","))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[StockHistoricalRatios](ctx, c, req)
+	resp, err := sendRequest[[]StockHistoricalRatios](ctx, c, req)
 	if err != nil {
-		return StockHistoricalRatios{}, err
+		return nil, err
 	}
 
 	return resp, nil
 }
 
 type StockHistoricalRatiosDescription struct {
-	Slug        string  `json:"slug"`
-	Name        string  `json:"name"`
-	Suffix      string  `json:"suffix"`
-	Prefix      string  `json:"prefix"`
-	Display     bool    `json:"display"`
-	Precision   int     `json:"precision"`
-	Multiplier  float64 `json:"multiplier"`
-	Description string  `json:"description"`
-	Interval    string  `json:"interval"`
+	ID          int       `json:"id"`
+	Format      string    `json:"format"`
+	Currency    string    `json:"currency"`
+	Slug        string    `json:"slug"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Locale      string    `json:"locale"`
+	IsRealtime  bool      `json:"isRealtime"`
 }
 
 func (c *Client) GetHistoricalRatiosDescriptions(ctx context.Context, locale Locale, region Region) ([]StockHistoricalRatiosDescription, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/historical-ratios/descriptions", c.baseUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-ratios/descriptions", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,12 +150,17 @@ func (c *Client) GetHistoricalRatiosDescriptions(ctx context.Context, locale Loc
 type HistoricalFinancialSheets struct {
 	Sheets []HistoricalFinancialSheet `json:"sheets"`
 }
-
 type HistoricalFinancialSheet struct {
-	Period string                        `json:"period"`
-	Rows   []HistoricalFinancialSheetRow `json:"rows"`
+	Period string      `json:"period"`
+	Items  []SheetItem `json:"items"`
 }
 
+type SheetItem struct {
+	Description     string  `json:"description"`
+	Value           float64 `json:"value"`
+	SheetLineItemId int     `json:"lineCodeId"`
+	Indent          int     `json:"indentLevel"`
+}
 type HistoricalFinancialSheetRow struct {
 	Description             string  `json:"description"`
 	Value                   float64 `json:"value"`
@@ -180,7 +201,7 @@ type FinancialSheetDate struct {
 }
 
 func (c *Client) GetHistoricalFinancialSheets(ctx context.Context, symbol string, from FinancialSheetDate, to FinancialSheetDate, sheetType FinancialSheetType, period FinancialSheetPeriod, currency Currency, region Region) (HistoricalFinancialSheets, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/historical-financial-sheets", c.baseUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-financial-sheets", c.baseUrl), nil)
 	if err != nil {
 		return HistoricalFinancialSheets{}, err
 	}

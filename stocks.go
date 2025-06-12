@@ -96,7 +96,10 @@ const (
 	HistoricalPriceIntervalFiveMinute   HistoricalPriceInterval = "5m"
 	HistoricalPriceIntervalThirtyMinute HistoricalPriceInterval = "30m"
 	HistoricalPriceIntervalOneHour      HistoricalPriceInterval = "1h"
-	HistoricalPriceIntervalOneDay       HistoricalPriceInterval = "24h"
+	HistoricalPriceIntervalOneDay       HistoricalPriceInterval = "1d"
+	HistoricalPriceIntervalFiveDay      HistoricalPriceInterval = "5d"
+	HistoricalPriceIntervalSevenDay     HistoricalPriceInterval = "7d"
+	HistoricalPriceIntervalThirtyDay    HistoricalPriceInterval = "30d"
 )
 
 type HistoricalPriceDate struct {
@@ -295,7 +298,7 @@ func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region
 }
 
 func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/rules", c.baseUrl), nil)
 	if err != nil {
 		return TickRule{}, err
 	}
