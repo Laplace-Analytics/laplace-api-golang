@@ -33,7 +33,7 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetHistoricalRatios(ctx, "TUPRS", []HistoricalRatiosKey{HistoricalRatiosKeyPriceToEarningsRatio}, RegionTr)
+	resp, err := client.GetHistoricalRatios(ctx, "TUPRS", []HistoricalRatiosKey{HistoricalRatiosKeyPERatio}, RegionTr)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), resp)
 
