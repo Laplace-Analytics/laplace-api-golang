@@ -41,6 +41,7 @@ type StockStats struct {
 	LowerPriceLimit  Price   `json:"lowerPriceLimit,omitempty"`
 	UpperPriceLimit  Price   `json:"upperPriceLimit,omitempty"`
 	DayOpen          float64 `json:"dayOpen,omitempty"`
+	Eps              float64 `json:"eps,omitempty"`
 }
 
 type Price float64
