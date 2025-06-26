@@ -110,7 +110,7 @@ func sendSSERequest[T any](
 	// Check the response status
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		defer resp.Body.Close()
 		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
