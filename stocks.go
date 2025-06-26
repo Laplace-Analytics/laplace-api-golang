@@ -136,8 +136,10 @@ type StockRestriction struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
+	Symbol      string    `json:"symbol,omitempty"`
 	StartDate   time.Time `json:"startDate"`
 	EndDate     time.Time `json:"endDate"`
+	Market      string    `json:"market"`
 }
 
 type TickRule struct {
