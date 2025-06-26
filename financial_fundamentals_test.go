@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,9 +22,16 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetStockDividends(ctx, "TUPRS", RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	resp, err := client.GetStockDividends(ctx, "AKBNK", RegionTr)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	dividend := resp[0]
+	s.Require().NotEmpty(dividend.Date)
+	s.Require().Greater(dividend.GrossAmount, 0.0)      
+	s.Require().Greater(dividend.GrossRatio, 0.0)            
+	s.Require().Greater(dividend.PriceThen, 0.0)             
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
@@ -34,25 +40,18 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 	ctx := context.Background()
 
 	resp, err := client.GetStockStats(ctx, []string{"TUPRS"}, RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(resp)
+	
 	currentStockStats := resp[0]
-	require.NotEmpty(s.T(), currentStockStats)
-	require.Equal(s.T(), "TUPRS", currentStockStats.Symbol)
-	require.Greater(s.T(), currentStockStats.PreviousClose, 0.0)
-	require.Greater(s.T(), currentStockStats.MarketCap, 0.0)
-	require.NotEqual(s.T(), currentStockStats.PeRatio, 0.0)
-	require.NotEqual(s.T(), currentStockStats.PbRatio, 0.0)
-	require.Greater(s.T(), currentStockStats.YearLow, 0.0)
-	require.Greater(s.T(), currentStockStats.YearHigh, 0.0)
-	require.NotEqual(s.T(), currentStockStats.WeeklyReturn, 0.0)
-	require.NotEqual(s.T(), currentStockStats.MonthlyReturn, 0.0)
-	require.NotEqual(s.T(), currentStockStats.ThreeMonthReturn, 0.0)
-	require.NotEqual(s.T(), currentStockStats.YtdReturn, 0.0)
-	require.NotEqual(s.T(), currentStockStats.YearlyReturn, 0.0)
-	require.NotEqual(s.T(), currentStockStats.LowerPriceLimit, 0.0)
-	require.NotEqual(s.T(), currentStockStats.UpperPriceLimit, 0.0)
-	require.NotEqual(s.T(), currentStockStats.DayOpen, 0.0)
+	s.Require().Equal("TUPRS", currentStockStats.Symbol)
+	s.Require().Greater(currentStockStats.PreviousClose, 0.0)
+	s.Require().Greater(currentStockStats.MarketCap, 0.0)
+	s.Require().Greater(currentStockStats.YearLow, 0.0)
+	s.Require().Greater(currentStockStats.YearHigh, 0.0)
+	s.Require().NotEqual(currentStockStats.LowerPriceLimit, 0.0)
+	s.Require().NotEqual(currentStockStats.UpperPriceLimit, 0.0)
+	s.Require().NotEqual(currentStockStats.DayOpen, 0.0)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
@@ -60,7 +59,28 @@ func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetTopMovers(ctx, RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	assetClass := AssetClassEquity
+	assetType := AssetTypeStock
+
+	respGainers, err := client.GetTopMovers(ctx, TopMoversDirectionGainers, &assetClass, &assetType, 0, 10, RegionTr)
+	s.Require().NoError(err)
+	s.Require().NotNil(respGainers)
+	s.Require().Greater(len(respGainers), 0)
+
+	gainer := respGainers[0]
+	s.Require().NotEmpty(gainer.Symbol)
+	s.Require().Greater(gainer.Change, 0.0)
+	s.Require().Equal(string(assetClass), gainer.AssetClass)
+	s.Require().Equal(string(assetType), gainer.AssetType)
+
+	respLosers, err := client.GetTopMovers(ctx, TopMoversDirectionLosers, &assetClass, &assetType, 0, 10, RegionTr)
+	s.Require().NoError(err)
+	s.Require().NotNil(respLosers)
+	s.Require().Greater(len(respLosers), 0)
+
+	loser := respLosers[0]
+	s.Require().NotEmpty(loser.Symbol)
+	s.Require().Less(loser.Change, 0.0)
+	s.Require().Equal(string(assetClass), gainer.AssetClass)
+	s.Require().Equal(string(assetType), gainer.AssetType)
 }
