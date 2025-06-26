@@ -22,6 +22,7 @@ const (
 	AssetTypeEtf         AssetType = "etf"
 	AssetTypeCommodity   AssetType = "commodity"
 	AssetTypeStockRights AssetType = "stock_rights"
+	AssetTypeFund        AssetType = "fund"
 )
 
 type AssetClass string
