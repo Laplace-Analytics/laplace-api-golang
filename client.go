@@ -81,7 +81,7 @@ func sendRequest[T any](
 			HTTPStatus: res.StatusCode,
 			Message:    msg,
 		}
-		return resp, WrapError(httpErr)
+		return resp, unwrapError(httpErr)
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {

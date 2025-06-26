@@ -17,14 +17,13 @@ var (
 	ErrInvalidID                    LaplaceError = errors.New("invalid object id")
 )
 
-func WrapError(err error) error {
+func unwrapError(err error) error {
 	if err == nil {
 		return nil
 	}
 
 	if httpErr, ok := err.(*LaplaceHTTPError); ok {
-		getLaplaceError(httpErr)
-		return httpErr
+		return getLaplaceError(httpErr)
 	}
 
 	return err
