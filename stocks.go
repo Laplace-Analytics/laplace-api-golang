@@ -300,6 +300,24 @@ func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region
 	return resp, nil
 }
 
+func (c *Client) GetAllRestrictions(ctx context.Context, region Region) ([]StockRestriction, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions/all", c.baseUrl), nil)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]StockRestriction](ctx, c, req)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	return resp, nil
+}
+
 func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
 	if err != nil {
