@@ -29,7 +29,7 @@ func unwrapError(err error) error {
 	return err
 }
 
-func getLaplaceError(httpErr *LaplaceHTTPError) {
+func getLaplaceError(httpErr *LaplaceHTTPError) *LaplaceHTTPError {
 	switch httpErr.HTTPStatus {
 	case http.StatusForbidden:
 		switch httpErr.Message.Message {
@@ -52,6 +52,8 @@ func getLaplaceError(httpErr *LaplaceHTTPError) {
 			httpErr.InternalError = ErrInvalidToken
 		}
 	}
+
+	return httpErr
 }
 
 type LaplaceHTTPError struct {
