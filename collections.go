@@ -33,19 +33,19 @@ const (
 )
 
 type Collection struct {
-	ID          primitive.ObjectID `json:"id"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Region      []Region           `json:"region"`
-	AssetClass  string             `json:"assetClass"`
-	ImageUrl    string             `json:"imageUrl"`
-	AvatarUrl   string             `json:"avatarUrl"`
-	NumStocks   int                `json:"numStocks"`
+	ID         primitive.ObjectID `json:"id"`
+	Title      string             `json:"title"`
+	Region     []string           `json:"region"`
+	ImageUrl   string             `json:"imageUrl"`
+	AvatarUrl  string             `json:"avatarUrl"`
+	NumStocks  int                `json:"numStocks"`
+	AssetClass string             `json:"assetClass,omitempty"`
 
-	Image    string           `json:"image"`
-	Order    int              `json:"order"`
-	Status   CollectionStatus `json:"status,omitempty"`
-	MetaData map[string]any   `json:"metaData,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Image       string         `json:"image,omitempty"`
+	Order       *int           `json:"order,omitempty"`
+	Status      string         `json:"status,omitempty"`
+	MetaData    map[string]any `json:"metaData,omitempty"`
 }
 
 type CollectionDetail struct {
