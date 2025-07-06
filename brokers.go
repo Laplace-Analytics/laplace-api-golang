@@ -10,9 +10,20 @@ import (
 type BrokerSort string
 
 const (
-	BrokerSortNetBuy  BrokerSort = "netBuy"
-	BrokerSortNetSell BrokerSort = "netSell"
-	BrokerSortVolume  BrokerSort = "volume"
+	BrokerSortNetAmount       BrokerSort = "netAmount"
+	BrokerSortTotalAmount     BrokerSort = "totalAmount"
+	BrokerSortTotalVolume     BrokerSort = "totalVolume"
+	BrokerSortTotalBuyAmount  BrokerSort = "totalBuyAmount"
+	BrokerSortTotalBuyVolume  BrokerSort = "totalBuyVolume"
+	BrokerSortTotalSellAmount BrokerSort = "totalSellAmount"
+	BrokerSortTotalSellVolume BrokerSort = "totalSellVolume"
+)
+
+type BrokerSortDirection string
+
+const (
+	BrokerSortDirectionDesc BrokerSortDirection = "desc"
+	BrokerSortDirectionAsc  BrokerSortDirection = "asc"
 )
 
 type Broker struct {
@@ -24,208 +35,151 @@ type Broker struct {
 }
 
 type BrokerStock struct {
-	Symbol     string     `json:"symbol"`
-	Name       string     `json:"name"`
-	ID         string     `json:"id"`
-	AssetType  AssetType  `json:"assetType"`
-	AssetClass AssetClass `json:"assetClass"`
-	Region     Region     `json:"region"`
-}
-
-type BaseBrokerStats struct {
-	TotalBuyAmount   float64 `json:"totalBuyAmount"`
-	TotalSellAmount  float64 `json:"totalSellAmount"`
-	NetAmount        float64 `json:"netAmount"`
-	TotalBuyVolume   int64   `json:"totalBuyVolume"`
-	TotalSellVolume  int64   `json:"totalSellVolume"`
-	TotalVolume      int64   `json:"totalVolume"`
-	TotalAmount      float64 `json:"totalAmount"`
+	Symbol     string `json:"symbol"`
+	Name       string `json:"name"`
+	AssetId    string `json:"id"`
+	AssetType  string `json:"assetType"`
+	AssetClass string `json:"assetClass"`
+	LogoUrl    string `json:"logoUrl,omitempty"`
+	Exchange   string `json:"exchange,omitempty"`
 }
 
 type BrokerStats struct {
-	BaseBrokerStats
-	Broker Broker `json:"broker"`
+	TotalBuyAmount  float64 `json:"totalBuyAmount"`
+	TotalSellAmount float64 `json:"totalSellAmount"`
+	NetAmount       float64 `json:"netAmount"`
+	TotalBuyVolume  float64 `json:"totalBuyVolume"`
+	TotalSellVolume float64 `json:"totalSellVolume"`
+	TotalVolume     float64 `json:"totalVolume"`
+	TotalAmount     float64 `json:"totalAmount"`
+	AverageCost     float64 `json:"averageCost,omitempty"`
 }
 
-type MarketBrokersResponse struct {
-	RecordCount int             `json:"recordCount"`
-	TotalStats  BaseBrokerStats `json:"totalStats"`
-	Items       []BrokerStats   `json:"items"`
+type BrokerListResponse struct {
+	RecordCount int                   `json:"recordCount"`
+	TotalStats  BrokerStats           `json:"totalStats"`
+	Items       []*BrokerResponseItem `json:"items"`
 }
 
-type TopBrokersResponse struct {
-	TopStats  BaseBrokerStats `json:"topStats"`
-	RestStats BaseBrokerStats `json:"restStats"`
-	TopItems  []BrokerStats   `json:"topItems"`
+type BrokerResponseItem struct {
+	BrokerStats
+	Broker *Broker      `json:"broker,omitempty"`
+	Stock  *BrokerStock `json:"stock,omitempty"`
 }
 
-type StockBrokerStats struct {
-	BaseBrokerStats
-	AverageCost float64 `json:"averageCost"`
-	Broker      Broker  `json:"broker"`
+func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) (PaginatedResponse[*Broker], error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers", c.baseUrl), nil)
+	if err != nil {
+		return PaginatedResponse[*Broker]{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("page", strconv.Itoa(page))
+	q.Add("size", strconv.Itoa(size))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[PaginatedResponse[*Broker]](ctx, c, req)
+	if err != nil {
+		return PaginatedResponse[*Broker]{}, err
+	}
+
+	return resp, nil
 }
 
-type StockOverallStats struct {
-	BaseBrokerStats
-	AverageCost float64 `json:"averageCost"`
+func (c *Client) GetMarketStocks(ctx context.Context, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/market/stock", c.baseUrl), nil)
+	if err != nil {
+		return BrokerListResponse{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("sortBy", string(sortBy))
+	q.Add("sortDirection", string(sortDirection))
+	q.Add("fromDate", fromDate)
+	q.Add("toDate", toDate)
+	q.Add("page", strconv.Itoa(page))
+	q.Add("size", strconv.Itoa(size))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[BrokerListResponse](ctx, c, req)
+	if err != nil {
+		return BrokerListResponse{}, err
+	}
+
+	return resp, nil
 }
 
-type StockBrokersResponse struct {
-	RecordCount int                 `json:"recordCount"`
-	TotalStats  StockOverallStats   `json:"totalStats"`
-	Items       []StockBrokerStats  `json:"items"`
-}
-
-type TopStockBrokersResponse struct {
-	TopStats  StockOverallStats  `json:"topStats"`
-	RestStats StockOverallStats  `json:"restStats"`
-	TopItems  []StockBrokerStats `json:"topItems"`
-}
-
-type BrokerStockStats struct {
-	BaseBrokerStats
-	Stock BrokerStock `json:"stock"`
-}
-
-type TopStocksForBrokerResponse struct {
-	TopStats  BaseBrokerStats    `json:"topStats"`
-	RestStats BaseBrokerStats    `json:"restStats"`
-	TopItems  []BrokerStockStats `json:"topItems"`
-}
-
-func (c *Client) GetMarketBrokers(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, page, size int) (MarketBrokersResponse, error) {
+func (c *Client) GetMarketBrokers(ctx context.Context, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/market", c.baseUrl), nil)
 	if err != nil {
-		return MarketBrokersResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	q := req.URL.Query()
 	q.Add("region", string(region))
+	q.Add("sortBy", string(sortBy))
+	q.Add("sortDirection", string(sortDirection))
 	q.Add("fromDate", fromDate)
 	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(size))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[MarketBrokersResponse](ctx, c, req)
+	resp, err := sendRequest[BrokerListResponse](ctx, c, req)
 	if err != nil {
-		return MarketBrokersResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	return resp, nil
 }
 
-func (c *Client) GetTopMarketBrokers(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, top int) (TopBrokersResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/market/top", c.baseUrl), nil)
+func (c *Client) GetBrokersByStock(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/%s", c.baseUrl, symbol), nil)
 	if err != nil {
-		return TopBrokersResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add("region", string(region))
-	q.Add("fromDate", fromDate)
-	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
-	q.Add("top", strconv.Itoa(top))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[TopBrokersResponse](ctx, c, req)
-	if err != nil {
-		return TopBrokersResponse{}, err
-	}
-
-	return resp, nil
-}
-
-func (c *Client) GetStockBrokers(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, symbol string, page, size int) (StockBrokersResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/stock", c.baseUrl), nil)
-	if err != nil {
-		return StockBrokersResponse{}, err
-	}
-
-	q := req.URL.Query()
-	q.Add("region", string(region))
-	q.Add("fromDate", fromDate)
-	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
 	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	q.Add("sortBy", string(sortBy))
+	q.Add("sortDirection", string(sortDirection))
+	q.Add("fromDate", fromDate)
+	q.Add("toDate", toDate)
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(size))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[StockBrokersResponse](ctx, c, req)
+	resp, err := sendRequest[BrokerListResponse](ctx, c, req)
 	if err != nil {
-		return StockBrokersResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	return resp, nil
 }
 
-func (c *Client) GetTopStockBrokers(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, symbol string, top int) (TopStockBrokersResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/stock/top", c.baseUrl), nil)
+func (c *Client) GetStocksByBroker(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/stock/%s", c.baseUrl, symbol), nil)
 	if err != nil {
-		return TopStockBrokersResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add("region", string(region))
-	q.Add("fromDate", fromDate)
-	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
 	q.Add("symbol", symbol)
-	q.Add("top", strconv.Itoa(top))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[TopStockBrokersResponse](ctx, c, req)
-	if err != nil {
-		return TopStockBrokersResponse{}, err
-	}
-
-	return resp, nil
-}
-
-func (c *Client) GetTopBrokersForBroker(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, brokerSymbol string, top int) (TopBrokersResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/top", c.baseUrl), nil)
-	if err != nil {
-		return TopBrokersResponse{}, err
-	}
-
-	q := req.URL.Query()
 	q.Add("region", string(region))
+	q.Add("sortBy", string(sortBy))
+	q.Add("sortDirection", string(sortDirection))
 	q.Add("fromDate", fromDate)
 	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
-	q.Add("brokerSymbol", brokerSymbol)
-	q.Add("top", strconv.Itoa(top))
+	q.Add("page", strconv.Itoa(page))
+	q.Add("size", strconv.Itoa(size))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[TopBrokersResponse](ctx, c, req)
+	resp, err := sendRequest[BrokerListResponse](ctx, c, req)
 	if err != nil {
-		return TopBrokersResponse{}, err
-	}
-
-	return resp, nil
-}
-
-func (c *Client) GetTopStocksForBroker(ctx context.Context, region Region, fromDate, toDate string, sortBy BrokerSort, brokerSymbol string, top int) (TopStocksForBrokerResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/top", c.baseUrl), nil)
-	if err != nil {
-		return TopStocksForBrokerResponse{}, err
-	}
-
-	q := req.URL.Query()
-	q.Add("region", string(region))
-	q.Add("fromDate", fromDate)
-	q.Add("toDate", toDate)
-	q.Add("sortBy", string(sortBy))
-	q.Add("brokerSymbol", brokerSymbol)
-	q.Add("top", strconv.Itoa(top))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[TopStocksForBrokerResponse](ctx, c, req)
-	if err != nil {
-		return TopStocksForBrokerResponse{}, err
+		return BrokerListResponse{}, err
 	}
 
 	return resp, nil
