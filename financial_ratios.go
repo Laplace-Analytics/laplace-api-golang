@@ -276,7 +276,7 @@ type FinancialSheetDate struct {
 }
 
 func (c *Client) GetHistoricalFinancialSheets(ctx context.Context, symbol string, from FinancialSheetDate, to FinancialSheetDate, sheetType FinancialSheetType, period FinancialSheetPeriod, currency Currency, region Region) (HistoricalFinancialSheets, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-financial-sheets", c.baseUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v3/stock/historical-financial-sheets", c.baseUrl), nil)
 	if err != nil {
 		return HistoricalFinancialSheets{}, err
 	}
