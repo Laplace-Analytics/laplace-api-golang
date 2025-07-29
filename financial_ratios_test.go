@@ -89,7 +89,7 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
 		Year:  2024,
 		Month: 1,
 		Day:   1,
-	}, FinancialSheetBalanceSheet, FinancialSheetPeriodAnnual, CurrencyTRY, RegionTr)
+	}, FinancialSheetBalanceSheet, FinancialSheetPeriodCumulative, CurrencyTRY, RegionTr)
 	s.Require().NoError(err)
 	s.Require().Greater(len(resp.Sheets), 0)
 

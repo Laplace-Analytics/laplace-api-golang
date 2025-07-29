@@ -52,10 +52,10 @@ func (p Price) MarshalJSON() ([]byte, error) {
 }
 
 type TopMover struct {
-	Symbol     string  `json:"symbol"`
-	AssetClass string  `json:"assetClass,omitempty"`
-	AssetType  string  `json:"assetType,omitempty"`
-	Change     float64 `json:"change"`
+	Symbol     string     `json:"symbol"`
+	AssetClass AssetClass `json:"assetClass,omitempty"`
+	AssetType  AssetType  `json:"assetType,omitempty"`
+	Change     float64    `json:"change"`
 }
 
 type TopMoversDirection string
@@ -103,7 +103,7 @@ func (c *Client) GetStockStats(ctx context.Context, symbols []string, region Reg
 	return resp, nil
 }
 
-func (c *Client) GetTopMovers(ctx context.Context, direction TopMoversDirection, assetClass *AssetClass, assetType *AssetType, page int, pageSize int, region Region) ([]TopMover, error) {
+func (c *Client) GetTopMovers(ctx context.Context, direction TopMoversDirection, assetClass AssetClass, assetType AssetType, page int, pageSize int, region Region) ([]TopMover, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/top-movers", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
@@ -114,14 +114,14 @@ func (c *Client) GetTopMovers(ctx context.Context, direction TopMoversDirection,
 	q.Add("pageSize", strconv.Itoa(pageSize))
 	q.Add("page", strconv.Itoa(page))
 	q.Add("region", string(region))
-	
-	if assetClass != nil {
-		q.Add("assetClass", string(*assetClass))
+
+	if assetClass != AssetClassAll {
+		q.Add("assetClass", string(assetClass))
 	}
-	if assetType != nil {
-		q.Add("assetType", string(*assetType))
+	if assetType != AssetTypeAll {
+		q.Add("assetType", string(assetType))
 	}
-	
+
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]TopMover](ctx, c, req)

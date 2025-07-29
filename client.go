@@ -77,11 +77,10 @@ func sendRequest[T any](
 			return resp, err
 		}
 
-		httpErr := &LaplaceHTTPError{
+		return resp, getLaplaceError(&LaplaceHTTPError{
 			HTTPStatus: res.StatusCode,
 			Message:    msg,
-		}
-		return resp, unwrapError(httpErr)
+		})
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {

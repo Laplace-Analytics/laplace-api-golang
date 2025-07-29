@@ -29,9 +29,9 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
 
 	dividend := resp[0]
 	s.Require().NotEmpty(dividend.Date)
-	s.Require().Greater(dividend.GrossAmount, 0.0)      
-	s.Require().Greater(dividend.GrossRatio, 0.0)            
-	s.Require().Greater(dividend.PriceThen, 0.0)             
+	s.Require().Greater(dividend.GrossAmount, 0.0)
+	s.Require().Greater(dividend.GrossRatio, 0.0)
+	s.Require().Greater(dividend.PriceThen, 0.0)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
@@ -42,7 +42,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 	resp, err := client.GetStockStats(ctx, []string{"TUPRS"}, RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
-	
+
 	currentStockStats := resp[0]
 	s.Require().Equal("TUPRS", currentStockStats.Symbol)
 	s.Require().Greater(currentStockStats.PreviousClose, 0.0)
@@ -62,7 +62,7 @@ func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
 	assetClass := AssetClassEquity
 	assetType := AssetTypeStock
 
-	respGainers, err := client.GetTopMovers(ctx, TopMoversDirectionGainers, &assetClass, &assetType, 0, 10, RegionTr)
+	respGainers, err := client.GetTopMovers(ctx, TopMoversDirectionGainers, assetClass, assetType, 0, 10, RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotNil(respGainers)
 	s.Require().Greater(len(respGainers), 0)
@@ -70,10 +70,10 @@ func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
 	gainer := respGainers[0]
 	s.Require().NotEmpty(gainer.Symbol)
 	s.Require().Greater(gainer.Change, 0.0)
-	s.Require().Equal(string(assetClass), gainer.AssetClass)
-	s.Require().Equal(string(assetType), gainer.AssetType)
+	s.Require().Equal(assetClass, gainer.AssetClass)
+	s.Require().Equal(assetType, gainer.AssetType)
 
-	respLosers, err := client.GetTopMovers(ctx, TopMoversDirectionLosers, &assetClass, &assetType, 0, 10, RegionTr)
+	respLosers, err := client.GetTopMovers(ctx, TopMoversDirectionLosers, assetClass, assetType, 0, 10, RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotNil(respLosers)
 	s.Require().Greater(len(respLosers), 0)
@@ -81,6 +81,6 @@ func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {
 	loser := respLosers[0]
 	s.Require().NotEmpty(loser.Symbol)
 	s.Require().Less(loser.Change, 0.0)
-	s.Require().Equal(string(assetClass), gainer.AssetClass)
-	s.Require().Equal(string(assetType), gainer.AssetType)
+	s.Require().Equal(assetClass, gainer.AssetClass)
+	s.Require().Equal(assetType, gainer.AssetType)
 }

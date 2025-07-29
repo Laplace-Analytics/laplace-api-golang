@@ -23,6 +23,7 @@ const (
 	AssetTypeCommodity   AssetType = "commodity"
 	AssetTypeStockRights AssetType = "stock_rights"
 	AssetTypeFund        AssetType = "fund"
+	AssetTypeAll         AssetType = "all"
 )
 
 type AssetClass string
@@ -30,6 +31,7 @@ type AssetClass string
 const (
 	AssetClassEquity AssetClass = "equity"
 	AssetClassCrypto AssetClass = "crypto"
+	AssetClassAll    AssetClass = "all"
 )
 
 type Stock struct {

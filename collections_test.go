@@ -52,7 +52,7 @@ func (s *CollectionsTestSuite) TestGetIndustryDetails() {
 
 	hasValidRegion := false
 	for _, region := range resp.Region {
-		if region == string(RegionTr) || region == string(RegionUs) {
+		if region == RegionTr || region == RegionUs {
 			hasValidRegion = true
 			break
 		}
@@ -104,7 +104,7 @@ func (s *CollectionsTestSuite) TestGetSectorDetails() {
 
 	hasValidRegion := false
 	for _, region := range resp.Region {
-		if region == string(RegionTr) || region == string(RegionUs) {
+		if region == RegionTr || region == RegionUs {
 			hasValidRegion = true
 			break
 		}
@@ -156,7 +156,7 @@ func (s *CollectionsTestSuite) TestGetCollectionDetail() {
 
 	hasValidRegion := false
 	for _, region := range resp.Region {
-		if region == string(RegionTr) || region == string(RegionUs) {
+		if region == RegionTr || region == RegionUs {
 			hasValidRegion = true
 			break
 		}
@@ -208,7 +208,7 @@ func (s *CollectionsTestSuite) TestGetThemeDetail() {
 
 	hasValidRegion := false
 	for _, region := range resp.Region {
-		if region == string(RegionTr) || region == string(RegionUs) {
+		if region == RegionTr || region == RegionUs {
 			hasValidRegion = true
 			break
 		}

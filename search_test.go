@@ -52,13 +52,13 @@ func (s *SearchTestSuite) TestSearchIndustry() {
 	s.Require().NotEmpty(industry.Title)
 
 	hasValidRegion := false
-		for _, region := range industry.Region {
-			if region == string(RegionTr) || region == string(RegionUs) {
-				hasValidRegion = true
-				break
-			}
+	for _, region := range industry.Region {
+		if region == RegionTr || region == RegionUs {
+			hasValidRegion = true
+			break
 		}
-		s.Require().True(hasValidRegion)
+	}
+	s.Require().True(hasValidRegion)
 }
 
 func (s *SearchTestSuite) TestSearchAllTypes() {
@@ -75,9 +75,9 @@ func (s *SearchTestSuite) TestSearchAllTypes() {
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
-	hasResults := len(resp.Stocks) > 0 || 
-		len(resp.Industries) > 0 || 
-		len(resp.Sectors) > 0 || 
+	hasResults := len(resp.Stocks) > 0 ||
+		len(resp.Industries) > 0 ||
+		len(resp.Sectors) > 0 ||
 		len(resp.Collections) > 0
 	s.Require().True(hasResults)
 

@@ -46,7 +46,7 @@ func (s *FundsTestSuite) TestGetFunds() {
 	s.Require().NotEmpty(fund.Symbol)
 	s.Require().NotEmpty(fund.Name)
 	s.Require().NotEmpty(fund.OwnerSymbol)
-	s.Require().Equal(string(AssetTypeFund), fund.AssetType)
+	s.Require().Equal(AssetTypeFund, fund.AssetType)
 	s.Require().GreaterOrEqual(fund.ManagementFee, 0.0)
 	s.Require().Contains(getAllFundTypes(), fund.FundType)
 }

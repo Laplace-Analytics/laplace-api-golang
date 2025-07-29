@@ -17,18 +17,6 @@ var (
 	ErrInvalidID                    LaplaceError = errors.New("invalid object id")
 )
 
-func unwrapError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if httpErr, ok := err.(*LaplaceHTTPError); ok {
-		return getLaplaceError(httpErr)
-	}
-
-	return err
-}
-
 func getLaplaceError(httpErr *LaplaceHTTPError) *LaplaceHTTPError {
 	switch httpErr.HTTPStatus {
 	case http.StatusForbidden:

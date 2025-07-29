@@ -56,9 +56,8 @@ type BrokerStats struct {
 }
 
 type BrokerListResponse struct {
-	RecordCount int                   `json:"recordCount"`
-	TotalStats  BrokerStats           `json:"totalStats"`
-	Items       []*BrokerResponseItem `json:"items"`
+	PaginatedResponse[*BrokerResponseItem]
+	TotalStats BrokerStats `json:"totalStats"`
 }
 
 type BrokerResponseItem struct {

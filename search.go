@@ -46,8 +46,8 @@ type SearchResponseStock struct {
 type SearchResponseCollection struct {
 	ID         primitive.ObjectID `json:"id"`
 	Title      string             `json:"title"`
-	Region     []string           `json:"region"`
-	AssetClass string             `json:"assetClass"`
+	Region     []Region           `json:"region"`
+	AssetClass AssetClass         `json:"assetClass"`
 	ImageUrl   string             `json:"imageUrl"`
 	AvatarUrl  string             `json:"avatarUrl"`
 }
