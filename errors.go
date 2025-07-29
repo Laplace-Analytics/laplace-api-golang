@@ -17,20 +17,7 @@ var (
 	ErrInvalidID                    LaplaceError = errors.New("invalid object id")
 )
 
-func WrapError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if httpErr, ok := err.(*LaplaceHTTPError); ok {
-		getLaplaceError(httpErr)
-		return httpErr
-	}
-
-	return err
-}
-
-func getLaplaceError(httpErr *LaplaceHTTPError) {
+func getLaplaceError(httpErr *LaplaceHTTPError) *LaplaceHTTPError {
 	switch httpErr.HTTPStatus {
 	case http.StatusForbidden:
 		switch httpErr.Message.Message {
@@ -53,6 +40,8 @@ func getLaplaceError(httpErr *LaplaceHTTPError) {
 			httpErr.InternalError = ErrInvalidToken
 		}
 	}
+
+	return httpErr
 }
 
 type LaplaceHTTPError struct {

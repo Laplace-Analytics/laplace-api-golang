@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -41,6 +42,7 @@ type StockStats struct {
 	LowerPriceLimit  Price   `json:"lowerPriceLimit,omitempty"`
 	UpperPriceLimit  Price   `json:"upperPriceLimit,omitempty"`
 	DayOpen          float64 `json:"dayOpen,omitempty"`
+	Eps              float64 `json:"eps,omitempty"`
 }
 
 type Price float64
@@ -50,9 +52,18 @@ func (p Price) MarshalJSON() ([]byte, error) {
 }
 
 type TopMover struct {
-	Symbol        string  `json:"symbol"`
-	PercentChange float64 `json:"percent_change"`
+	Symbol     string     `json:"symbol"`
+	AssetClass AssetClass `json:"assetClass,omitempty"`
+	AssetType  AssetType  `json:"assetType,omitempty"`
+	Change     float64    `json:"change"`
 }
+
+type TopMoversDirection string
+
+const (
+	TopMoversDirectionGainers TopMoversDirection = "gainers"
+	TopMoversDirectionLosers  TopMoversDirection = "losers"
+)
 
 func (c *Client) GetStockDividends(ctx context.Context, symbol string, region Region) ([]StockDividend, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/dividends", c.baseUrl), nil)
@@ -92,14 +103,25 @@ func (c *Client) GetStockStats(ctx context.Context, symbols []string, region Reg
 	return resp, nil
 }
 
-func (c *Client) GetTopMovers(ctx context.Context, region Region) ([]TopMover, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/top-movers", c.baseUrl), nil)
+func (c *Client) GetTopMovers(ctx context.Context, direction TopMoversDirection, assetClass AssetClass, assetType AssetType, page int, pageSize int, region Region) ([]TopMover, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/top-movers", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	q := req.URL.Query()
+	q.Add("direction", string(direction))
+	q.Add("pageSize", strconv.Itoa(pageSize))
+	q.Add("page", strconv.Itoa(page))
 	q.Add("region", string(region))
+
+	if assetClass != AssetClassAll {
+		q.Add("assetClass", string(assetClass))
+	}
+	if assetType != AssetTypeAll {
+		q.Add("assetType", string(assetType))
+	}
+
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]TopMover](ctx, c, req)

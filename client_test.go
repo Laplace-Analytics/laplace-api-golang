@@ -30,7 +30,7 @@ func newTestClient(conf LaplaceConfiguration) *Client {
 func (s *LaplaceClientTestSuite) TestClient() {
 	client := newTestClient(s.Config)
 
-	req, err := http.NewRequest("GET", s.Config.BaseURL+"/api/v1/industry", nil)
+	req, err := http.NewRequest(http.MethodGet, s.Config.BaseURL+"/api/v1/industry", nil)
 	s.Require().NoError(err)
 	q := req.URL.Query()
 	q.Add("region", string(RegionTr))

@@ -22,6 +22,8 @@ const (
 	AssetTypeEtf         AssetType = "etf"
 	AssetTypeCommodity   AssetType = "commodity"
 	AssetTypeStockRights AssetType = "stock_rights"
+	AssetTypeFund        AssetType = "fund"
+	AssetTypeAll         AssetType = "all"
 )
 
 type AssetClass string
@@ -29,6 +31,7 @@ type AssetClass string
 const (
 	AssetClassEquity AssetClass = "equity"
 	AssetClassCrypto AssetClass = "crypto"
+	AssetClassAll    AssetClass = "all"
 )
 
 type Stock struct {
@@ -135,8 +138,10 @@ type StockRestriction struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
+	Symbol      string    `json:"symbol,omitempty"`
 	StartDate   time.Time `json:"startDate"`
 	EndDate     time.Time `json:"endDate"`
+	Market      string    `json:"market"`
 }
 
 type TickRule struct {
@@ -297,8 +302,26 @@ func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region
 	return resp, nil
 }
 
+func (c *Client) GetAllRestrictions(ctx context.Context, region Region) ([]StockRestriction, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions/all", c.baseUrl), nil)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]StockRestriction](ctx, c, req)
+	if err != nil {
+		return []StockRestriction{}, err
+	}
+
+	return resp, nil
+}
+
 func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/rules", c.baseUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
 	if err != nil {
 		return TickRule{}, err
 	}

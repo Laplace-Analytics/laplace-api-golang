@@ -77,11 +77,10 @@ func sendRequest[T any](
 			return resp, err
 		}
 
-		httpErr := &LaplaceHTTPError{
+		return resp, getLaplaceError(&LaplaceHTTPError{
 			HTTPStatus: res.StatusCode,
 			Message:    msg,
-		}
-		return resp, WrapError(httpErr)
+		})
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
@@ -110,7 +109,7 @@ func sendSSERequest[T any](
 	// Check the response status
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		defer resp.Body.Close()
 		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 

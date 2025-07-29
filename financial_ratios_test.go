@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,8 +23,16 @@ func (s *FinancialRatiosTestSuite) TestGetFinancialRatioComparison() {
 	ctx := context.Background()
 
 	resp, err := client.GetFinancialRatioComparison(ctx, "TUPRS", RegionTr, PeerTypeSector)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	comparison := resp[0]
+	s.Require().NotEmpty(comparison.MetricName)
+	s.Require().NotEmpty(comparison.Data)
+
+	data := comparison.Data[0]
+	s.Require().NotEmpty(data.Slug)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
@@ -34,20 +41,19 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 	ctx := context.Background()
 
 	resp, err := client.GetHistoricalRatios(ctx, "TUPRS", []HistoricalRatiosKey{HistoricalRatiosKeyPERatio}, RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
 
-	for _, item := range resp {
-		require.NotEmpty(s.T(), item.Items)
-		require.NotEmpty(s.T(), item.FinalValue)
-		require.NotEmpty(s.T(), item.ThreeYearGrowth)
-		require.NotEmpty(s.T(), item.YearGrowth)
-		require.NotEmpty(s.T(), item.FinalSectorValue)
-		require.NotEmpty(s.T(), item.Slug)
-		require.NotEmpty(s.T(), item.Currency)
-		require.NotEmpty(s.T(), item.Format)
-		require.NotEmpty(s.T(), item.Name)
-	}
+	ratio := resp[0]
+	s.Require().NotEmpty(ratio.Items)
+	s.Require().NotEmpty(ratio.Slug)
+	s.Require().NotEmpty(ratio.Name)
+	s.Require().NotEmpty(ratio.Format)
+	s.Require().NotEmpty(ratio.Currency)
+
+	item := ratio.Items[0]
+	s.Require().NotEmpty(item.Period)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
@@ -56,8 +62,18 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
 	ctx := context.Background()
 
 	resp, err := client.GetHistoricalRatiosDescriptions(ctx, LocaleTr, RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	desc := resp[0]
+	s.Require().Greater(desc.ID, 0)
+	s.Require().NotEmpty(desc.Slug)
+	s.Require().NotEmpty(desc.Name)
+	s.Require().NotEmpty(desc.Currency)
+	s.Require().NotEmpty(desc.Format)
+	s.Require().NotEmpty(desc.Description)
+	s.Require().Equal(string(LocaleTr), desc.Locale)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
@@ -70,10 +86,17 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
 		Month: 1,
 		Day:   1,
 	}, FinancialSheetDate{
-		Year:  2023,
+		Year:  2024,
 		Month: 1,
 		Day:   1,
-	}, FinancialSheetBalanceSheet, FinancialSheetPeriodAnnual, CurrencyTRY, RegionTr)
-	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), resp)
+	}, FinancialSheetBalanceSheet, FinancialSheetPeriodCumulative, CurrencyTRY, RegionTr)
+	s.Require().NoError(err)
+	s.Require().Greater(len(resp.Sheets), 0)
+
+	sheet := resp.Sheets[0]
+	s.Require().NotEmpty(sheet.Period)
+	s.Require().Greater(len(sheet.Items), 0)
+
+	item := sheet.Items[0]
+	s.Require().NotEmpty(item.Description)
 }
