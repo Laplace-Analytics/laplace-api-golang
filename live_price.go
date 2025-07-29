@@ -31,6 +31,7 @@ type BISTStockLiveData struct {
 	StockLiveData
 }
 
+// GetLivePriceForBIST streams real-time price data for BIST (Turkish) stock symbols via Server-Sent Events.
 func (c *Client) GetLivePriceForBIST(ctx context.Context, symbols []string) (data <-chan BISTStockLiveData, errors <-chan error, close func(), err error) {
 	return getLivePrice[BISTStockLiveData](c, ctx, symbols, RegionTr)
 }
@@ -42,6 +43,7 @@ type USStockLiveData struct {
 	StockLiveData
 }
 
+// GetLivePriceForUS streams real-time price data for US stock symbols via Server-Sent Events.
 func (c *Client) GetLivePriceForUS(ctx context.Context, symbols []string) (data <-chan USStockLiveData, errors <-chan error, close func(), err error) {
 	return getLivePrice[USStockLiveData](c, ctx, symbols, RegionUs)
 }

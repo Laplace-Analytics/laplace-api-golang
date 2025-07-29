@@ -21,12 +21,14 @@ type Client struct {
 
 type clientOption func(*Client)
 
+// WithLogger configures the client to use a custom logger instead of the default one.
 func WithLogger(logger *logrus.Logger) clientOption {
 	return func(c *Client) {
 		c.logger = logger
 	}
 }
 
+// NewClient creates a new Laplace API client with the provided configuration and optional settings.
 func NewClient(
 	cfg LaplaceConfiguration,
 	opts ...clientOption,

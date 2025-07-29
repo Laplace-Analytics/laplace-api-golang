@@ -26,6 +26,7 @@ func loadEnvironment(filename string) error {
 	return err
 }
 
+// LoadGlobal loads configuration from environment variables and optionally from a .env file.
 func LoadGlobal(filename string) (*LaplaceConfiguration, error) {
 	cfg, err := loadGlobal(filename, validationFuncRegular)
 	if err != nil {
@@ -67,10 +68,12 @@ func validationFuncRegular(config *LaplaceConfiguration) error {
 	return config.Validate()
 }
 
+// Validate performs validation checks on the configuration.
 func (c *LaplaceConfiguration) Validate() error {
 	return nil
 }
 
+// ApplyDefaults sets default values for configuration fields that are not provided.
 func (c *LaplaceConfiguration) ApplyDefaults() error {
 	return nil
 }

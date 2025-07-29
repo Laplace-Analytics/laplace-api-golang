@@ -10,10 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// GetAllCustomThemes retrieves all custom investment themes available for the specified locale.
 func (c *Client) GetAllCustomThemes(ctx context.Context, locale Locale) ([]Collection, error) {
 	return c.getAllCollections(ctx, CollectionTypeCustomTheme, "", locale)
 }
 
+// GetCustomThemeDetail fetches detailed information about a specific custom theme including its constituent stocks.
 func (c *Client) GetCustomThemeDetail(ctx context.Context, id string, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
 	return c.getCollectionDetail(ctx, id, CollectionTypeCustomTheme, region, locale, sortBy)
 }
@@ -42,6 +44,7 @@ type CreateCustomThemeResponse struct {
 	ID string `json:"id"`
 }
 
+// CreateCustomTheme creates a new custom investment theme with the specified parameters and returns the theme ID.
 func (c *Client) CreateCustomTheme(ctx context.Context, params CreateCustomThemeParams) (*primitive.ObjectID, error) {
 	bodyJSON, err := json.Marshal(params)
 	if err != nil {
@@ -78,6 +81,7 @@ type UpdateCustomThemeParams struct {
 	MetaData       map[string]any       `json:"meta_data,omitempty" bson:"meta_data,omitempty"`
 }
 
+// UpdateCustomTheme updates an existing custom theme with new parameters and settings.
 func (c *Client) UpdateCustomTheme(ctx context.Context, id primitive.ObjectID, params UpdateCustomThemeParams) error {
 	bodyJSON, err := json.Marshal(params)
 	if err != nil {
@@ -98,6 +102,7 @@ func (c *Client) UpdateCustomTheme(ctx context.Context, id primitive.ObjectID, p
 	return nil
 }
 
+// DeleteCustomTheme permanently removes a custom theme from the system.
 func (c *Client) DeleteCustomTheme(ctx context.Context, id primitive.ObjectID) error {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/v1/custom-theme/%s", c.baseUrl, id.Hex()), nil)
 	if err != nil {

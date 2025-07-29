@@ -43,6 +43,7 @@ type CapitalIncrease struct {
 	ExternalCapitalIncreaseRate   string     `json:"externalCapitalIncreaseRate"`
 }
 
+// GetAllCapitalIncreases retrieves all capital increase announcements and events with pagination.
 func (c *Client) GetAllCapitalIncreases(ctx context.Context, page int, pageSize int, region Region) (*PaginatedResponse[CapitalIncrease], error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/capital-increase/all", c.baseUrl), nil)
 	if err != nil {
@@ -63,6 +64,7 @@ func (c *Client) GetAllCapitalIncreases(ctx context.Context, page int, pageSize 
 	return &resp, nil
 }
 
+// GetCapitalIncreasesForInstrument fetches capital increase events for a specific stock symbol.
 func (c *Client) GetCapitalIncreasesForInstrument(ctx context.Context, symbol string, page int, pageSize int, region Region) (*PaginatedResponse[CapitalIncrease], error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/capital-increase/%s", c.baseUrl, symbol), nil)
 	if err != nil {
@@ -83,6 +85,7 @@ func (c *Client) GetCapitalIncreasesForInstrument(ctx context.Context, symbol st
 	return &resp, nil
 }
 
+// GetActiveRightsForInstrument retrieves active rights offerings for a specific stock on a given date.
 func (c *Client) GetActiveRightsForInstrument(ctx context.Context, symbol string, date string, region Region) ([]CapitalIncrease, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/rights/active/%s", c.baseUrl, symbol), nil)
 	if err != nil {
