@@ -21,15 +21,17 @@ const (
 type Region string
 
 const (
-	RegionTr Region = "tr"
-	RegionUs Region = "us"
+	RegionTr   Region = "tr"
+	RegionUs   Region = "us"
+	RegionNone Region = "none"
 )
 
 type Locale string
 
 const (
-	LocaleTr Locale = "tr"
-	LocaleEn Locale = "en"
+	LocaleTr   Locale = "tr"
+	LocaleEn   Locale = "en"
+	LocaleNone Locale = "none"
 )
 
 type Collection struct {
@@ -86,10 +88,12 @@ func (c *Client) getCollectionDetail(ctx context.Context, id string, collectionT
 	}
 
 	q := req.URL.Query()
-	if region != "" {
+	if region != RegionNone {
 		q.Add("region", string(region))
 	}
-	q.Add("locale", string(locale))
+	if locale != LocaleNone {
+		q.Add("locale", string(locale))
+	}
 	if sortBy != "" {
 		q.Add("sortBy", string(sortBy))
 	}

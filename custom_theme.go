@@ -11,13 +11,13 @@ import (
 )
 
 // GetAllCustomThemes retrieves all custom investment themes available for the specified locale.
-func (c *Client) GetAllCustomThemes(ctx context.Context, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeCustomTheme, "", locale)
+func (c *Client) GetAllCustomThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
+	return c.getAllCollections(ctx, CollectionTypeCustomTheme, region, locale)
 }
 
 // GetCustomThemeDetail fetches detailed information about a specific custom theme including its constituent stocks.
-func (c *Client) GetCustomThemeDetail(ctx context.Context, id string, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeCustomTheme, region, locale, sortBy)
+func (c *Client) GetCustomThemeDetail(ctx context.Context, id string, locale Locale, sortBy SortBy) (CollectionDetail, error) {
+	return c.getCollectionDetail(ctx, id, CollectionTypeCustomTheme, RegionNone, locale, sortBy)
 }
 
 type CollectionStatus string
