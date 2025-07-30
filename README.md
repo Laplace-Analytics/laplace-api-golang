@@ -39,7 +39,6 @@ func main() {
 	// Initialize the client
 	client := laplace.NewClient(laplace.LaplaceConfiguration{
 		APIKey:  "your-api-key-here",
-		BaseURL: "https://api.laplace.finfree.co",
 	})
 
 	// Create a context
@@ -179,12 +178,16 @@ movers, err := client.GetTopMovers(ctx, laplace.TopMoversDirectionGainers, lapla
 
 ```go
 // Get live prices for BIST stocks
-data, errors, close, err := client.GetLivePriceForBIST(ctx, []string{"THYAO", "GARAN"})
-defer close()
+lc, err := client.GetLivePriceForBIST(ctx, []string{"THYAO", "GARAN"})
 
 // Get live prices for US stocks
-data, errors, close, err := client.GetLivePriceForUS(ctx, []string{"AAPL", "GOOGL"})
-defer close()
+lc, err := client.GetLivePriceForUS(ctx, []string{"AAPL", "GOOGL"})
+
+
+for data := range lc.Receive() {
+	fmt.Printf("Received data: %+v\n", data.Data)
+}
+
 ```
 
 ### Brokers Client
@@ -289,7 +292,6 @@ import (
 
 client := laplace.NewClient(laplace.LaplaceConfiguration{
 	APIKey:  "your-api-key",
-	BaseURL: "https://api.laplace.finfree.co",
 })
 
 ctx := context.Background()
@@ -313,7 +315,6 @@ Get your API key from the Laplace platform and initialize the client:
 ```go
 client := laplace.NewClient(laplace.LaplaceConfiguration{
 	APIKey:  "your-api-key-here",
-	BaseURL: "https://api.laplace.finfree.co",
 })
 ```
 

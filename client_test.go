@@ -24,13 +24,14 @@ func TestLaplaceClient(t *testing.T) {
 func newTestClient(conf LaplaceConfiguration) *Client {
 	logger := logrus.New()
 
-	return NewClient(conf, WithLogger(logger))
+	c, _ := NewClient(conf, WithLogger(logger))
+	return c
 }
 
 func (s *LaplaceClientTestSuite) TestClient() {
 	client := newTestClient(s.Config)
 
-	req, err := http.NewRequest(http.MethodGet, s.Config.BaseURL+"/api/v1/industry", nil)
+	req, err := http.NewRequest(http.MethodGet, BaseURL+"/api/v1/industry", nil)
 	s.Require().NoError(err)
 	q := req.URL.Query()
 	q.Add("region", string(RegionTr))
@@ -52,8 +53,7 @@ func (s *LaplaceClientTestSuite) TestYouDontHaveAccessError() {
 
 func (s *LaplaceClientTestSuite) TestInvalidToken() {
 	invalidConfig := LaplaceConfiguration{
-		BaseURL: s.Config.BaseURL,
-		APIKey:  "invalid",
+		APIKey: "invalid",
 	}
 
 	client := newTestClient(invalidConfig)

@@ -1,6 +1,7 @@
 package laplace
 
 import (
+	"errors"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -8,8 +9,8 @@ import (
 )
 
 type LaplaceConfiguration struct {
-	BaseURL string `split_words:"true"`
 	APIKey  string `split_words:"true"`
+	BaseURL string `split_words:"true"`
 }
 
 func loadEnvironment(filename string) error {
@@ -28,7 +29,7 @@ func loadEnvironment(filename string) error {
 
 // LoadGlobal loads configuration from environment variables and optionally from a .env file.
 func LoadGlobal(filename string) (*LaplaceConfiguration, error) {
-	cfg, err := loadGlobal(filename, validationFuncRegular)
+	cfg, err := loadGlobal(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func LoadGlobal(filename string) (*LaplaceConfiguration, error) {
 	return cfg, nil
 }
 
-func loadGlobal(filename string, fn validationFunc) (*LaplaceConfiguration, error) {
+func loadGlobal(filename string) (*LaplaceConfiguration, error) {
 	if err := loadEnvironment(filename); err != nil {
 		return nil, err
 	}
@@ -49,31 +50,24 @@ func loadGlobal(filename string, fn validationFunc) (*LaplaceConfiguration, erro
 		return nil, err
 	}
 
-	if err := config.ApplyDefaults(); err != nil {
-		return nil, err
-	}
-
-	if fn != nil {
-		if err := fn(config); err != nil {
-			return nil, err
-		}
-	}
+	config.ApplyDefaults()
 
 	return config, nil
 }
 
-type validationFunc func(*LaplaceConfiguration) error
-
-func validationFuncRegular(config *LaplaceConfiguration) error {
-	return config.Validate()
-}
-
 // Validate performs validation checks on the configuration.
 func (c *LaplaceConfiguration) Validate() error {
+	if c.APIKey == "" {
+		return errors.New("API key is required")
+	}
+
 	return nil
 }
 
 // ApplyDefaults sets default values for configuration fields that are not provided.
-func (c *LaplaceConfiguration) ApplyDefaults() error {
-	return nil
+func (c *LaplaceConfiguration) ApplyDefaults() {
+	if c.BaseURL == "" {
+		c.BaseURL = BaseURL
+	}
+
 }
