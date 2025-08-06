@@ -21,16 +21,22 @@ type Client struct {
 
 type clientOption func(*Client)
 
+// WithLogger configures the client to use a custom logger instead of the default one.
 func WithLogger(logger *logrus.Logger) clientOption {
 	return func(c *Client) {
 		c.logger = logger
 	}
 }
 
+// NewClient creates a new Laplace API client with the provided configuration and optional settings.
 func NewClient(
 	cfg LaplaceConfiguration,
 	opts ...clientOption,
-) *Client {
+) (*Client, error) {
+	cfg.ApplyDefaults()
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 
 	defaultLogger := logrus.New()
 	defaultLogger.SetLevel(logrus.DebugLevel)
@@ -47,7 +53,7 @@ func NewClient(
 		opt(c)
 	}
 
-	return c
+	return c, nil
 }
 
 func sendRequest[T any](
@@ -90,69 +96,75 @@ func sendRequest[T any](
 	return resp, nil
 }
 
+type LivePriceResult[T any] struct {
+	Data  T
+	Error error
+}
+
 func sendSSERequest[T any](
 	ctx context.Context,
 	c *Client,
-	r *http.Request) (<-chan T, <-chan error, func(), error) {
+	url string,
+) (<-chan LivePriceResult[T], func(), error) {
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Set headers
-	r.Header.Set("Accept", "text/event-stream")
-	r.Header.Set("Cache-Control", "no-cache")
-	r.Header.Set("Connection", "keep-alive")
-	r.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	// Send the request
-	resp, err := c.cli.Do(r.WithContext(ctx))
+	resp, err := c.cli.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// Check the response status
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
-		return nil, nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
+		return nil, nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	// Create a channel to send LivePriceEvents
-	events := make(chan T)
-	errorChan := make(chan error)
+	// Create a single channel for results
+	results := make(chan LivePriceResult[T])
 
-	// Create a new context with cancellation
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 
 	// Start a goroutine to read the SSE stream
 	go func() {
 		defer resp.Body.Close()
-		defer close(events)
-		defer close(errorChan)
+		defer close(results)
+		defer cancel()
 
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "data:") {
-				data := strings.TrimPrefix(line, "data:")
-				var event T
-				if err := json.Unmarshal([]byte(data), &event); err != nil {
-					errorChan <- fmt.Errorf("error unmarshalling event: %w", err)
-					continue
+			select {
+			case <-ctxWithCancel.Done():
+				return
+			default:
+				line := scanner.Text()
+				if strings.HasPrefix(line, "data:") {
+					data := strings.TrimPrefix(line, "data:")
+					var event T
+					if err := json.Unmarshal([]byte(data), &event); err != nil {
+						results <- LivePriceResult[T]{Error: fmt.Errorf("error unmarshalling event: %w", err)}
+						continue
+					}
+					results <- LivePriceResult[T]{Data: event}
 				}
-				events <- event
 			}
 		}
 
 		if err := scanner.Err(); err != nil {
-			errorChan <- fmt.Errorf("error reading SSE stream: %w", err)
-		}
-
-		// Add a select statement to handle cancellation
-		select {
-		case <-ctxWithCancel.Done():
-			return
-		default:
-			// Continue with the existing logic
+			results <- LivePriceResult[T]{Error: fmt.Errorf("error reading SSE stream: %w", err)}
 		}
 	}()
 
-	// Return the channels, a cancellation function, and error
-	return events, errorChan, cancel, nil
+	return results, cancel, nil
 }

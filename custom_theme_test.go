@@ -25,7 +25,7 @@ func (s *CustomThemeTestSuite) TestGetAllCustomThemes() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetAllCustomThemes(ctx, LocaleTr)
+	resp, err := client.GetAllCustomThemes(ctx, RegionTr, LocaleTr)
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)
@@ -87,7 +87,7 @@ func (s *CustomThemeTestSuite) TestCreateUpdateDeleteCustomTheme() {
 	testGetDetails(s, *id, LocaleTr, client, ctx, createParams)
 
 	testDeleteCustomTheme(s, *id, client, ctx)
-	resp, err := client.GetCustomThemeDetail(ctx, id.Hex(), "", LocaleTr, "")
+	resp, err := client.GetCustomThemeDetail(ctx, id.Hex(), LocaleTr, "")
 	require.Error(s.T(), err)
 	require.Empty(s.T(), resp)
 }
@@ -100,7 +100,7 @@ func testCreateCustomTheme(s *CustomThemeTestSuite, client *Client, ctx context.
 }
 
 func testGetDetails(s *CustomThemeTestSuite, id primitive.ObjectID, locale Locale, client *Client, ctx context.Context, createParams *CreateCustomThemeParams) {
-	resp, err := client.GetCustomThemeDetail(ctx, id.Hex(), "", locale, "")
+	resp, err := client.GetCustomThemeDetail(ctx, id.Hex(), locale, "")
 	require.NoError(s.T(), err)
 
 	require.NotEmpty(s.T(), resp)

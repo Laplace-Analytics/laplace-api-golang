@@ -52,6 +52,7 @@ type SearchResponseCollection struct {
 	AvatarUrl  string             `json:"avatarUrl"`
 }
 
+// Search performs a comprehensive search across stocks, collections, sectors, and industries with filtering and pagination.
 func (c *Client) Search(ctx context.Context, query string, types []SearchType, region Region, locale Locale, page int, pageSize PaginationPageSize) (*SearchResponse, error) {
 	typesStr := strings.Join(lo.Map(types, func(key SearchType, _ int) string {
 		return string(key)

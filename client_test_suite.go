@@ -1,6 +1,7 @@
 package laplace
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/joho/godotenv"
@@ -19,7 +20,7 @@ func NewClientTestSuite() *ClientTestSuite {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	repoRoot, err := findModuleRoot(s.T())
+	repoRoot, err := findModuleRoot()
 
 	if err != nil {
 		s.T().Fatalf("Could not find module root: %v", err)
@@ -37,9 +38,17 @@ func (s *ClientTestSuite) SetupTest() {
 		s.T().Fatalf("API key is not set")
 	}
 
-	if config.BaseURL == "" {
-		s.T().Fatalf("API base URL is not set")
+	s.Config = *config
+}
+
+func loadConfig() (*LaplaceConfiguration, error) {
+	repoRoot, err := findModuleRoot()
+
+	if err != nil {
+		return nil, fmt.Errorf("could not find module root: %v", err)
 	}
 
-	s.Config = *config
+	configPath := filepath.Join(repoRoot, testConfig)
+
+	return LoadGlobal(configPath)
 }

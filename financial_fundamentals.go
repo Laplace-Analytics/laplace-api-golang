@@ -65,6 +65,7 @@ const (
 	TopMoversDirectionLosers  TopMoversDirection = "losers"
 )
 
+// GetStockDividends retrieves dividend history and information for a specific stock.
 func (c *Client) GetStockDividends(ctx context.Context, symbol string, region Region) ([]StockDividend, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/dividends", c.baseUrl), nil)
 	if err != nil {
@@ -84,6 +85,7 @@ func (c *Client) GetStockDividends(ctx context.Context, symbol string, region Re
 	return resp, nil
 }
 
+// GetStockStats fetches comprehensive statistics for multiple stocks including market cap, P/E ratios, returns, and price data.
 func (c *Client) GetStockStats(ctx context.Context, symbols []string, region Region) ([]StockStats, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/stats", c.baseUrl), nil)
 	if err != nil {
@@ -103,6 +105,7 @@ func (c *Client) GetStockStats(ctx context.Context, symbols []string, region Reg
 	return resp, nil
 }
 
+// GetTopMovers retrieves the top gaining or losing stocks for the specified asset class and type with pagination.
 func (c *Client) GetTopMovers(ctx context.Context, direction TopMoversDirection, assetClass AssetClass, assetType AssetType, page int, pageSize int, region Region) ([]TopMover, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/top-movers", c.baseUrl), nil)
 	if err != nil {

@@ -54,6 +54,7 @@ type UpdateUserDetailsParams struct {
 	Active         bool         `json:"active"`
 }
 
+// GetWebSocketUrl generates a WebSocket URL for accessing real-time market data feeds including live prices and depth data.
 func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, feeds []FeedType, region Region) (string, error) {
 	params := WebSocketUrlParams{
 		ExternalUserId: externalUserId,
@@ -84,6 +85,7 @@ func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, fee
 	return resp.URL, nil
 }
 
+// UpdateUserDetails updates user profile information required for WebSocket access and data feeds.
 func (c *Client) UpdateUserDetails(ctx context.Context, params UpdateUserDetailsParams) error {
 	jsonData, err := json.Marshal(params)
 	if err != nil {
