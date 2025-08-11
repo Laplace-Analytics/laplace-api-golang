@@ -158,6 +158,7 @@ type TickSizeRule struct {
 	TickSize  float64 `json:"tickSize"`
 }
 
+// GetAllStocks retrieves a paginated list of all stocks for the specified region.
 func (c *Client) GetAllStocks(ctx context.Context, region Region, page int, pageSize int) ([]Stock, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/all", c.baseUrl), nil)
 	if err != nil {
@@ -180,6 +181,7 @@ func (c *Client) GetAllStocks(ctx context.Context, region Region, page int, page
 	return resp, nil
 }
 
+// GetStockDetailByID fetches detailed information about a stock using its unique ID.
 func (c *Client) GetStockDetailByID(ctx context.Context, id string, locale Locale) (StockDetail, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/%s", c.baseUrl, id), nil)
 	if err != nil {
@@ -198,6 +200,7 @@ func (c *Client) GetStockDetailByID(ctx context.Context, id string, locale Local
 	return resp, nil
 }
 
+// GetStockDetailBySymbol fetches detailed information about a stock using its symbol, asset class, region, and locale.
 func (c *Client) GetStockDetailBySymbol(ctx context.Context, symbol string, assetClass AssetClass, region Region, locale Locale) (StockDetail, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/detail", c.baseUrl), nil)
 	if err != nil {
@@ -219,6 +222,7 @@ func (c *Client) GetStockDetailBySymbol(ctx context.Context, symbol string, asse
 	return resp, nil
 }
 
+// GetHistoricalPrices retrieves historical price data for multiple stocks over specified time periods.
 func (c *Client) GetHistoricalPrices(ctx context.Context, symbols []string, region Region, keys []HistoricalPricePeriod) ([]StockPriceGraph, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/price", c.baseUrl), nil)
 	if err != nil {
@@ -241,6 +245,7 @@ func (c *Client) GetHistoricalPrices(ctx context.Context, symbols []string, regi
 	return resp, nil
 }
 
+// GetCustomHistoricalPrices retrieves custom historical price data for a stock within a specific date range and interval.
 func (c *Client) GetCustomHistoricalPrices(ctx context.Context, symbol string, region Region, fromDate string, toDate string, interval HistoricalPriceInterval, detail bool) ([]PriceDataPoint, error) {
 	if err := validateCustomHistoricalPriceDate(fromDate); err != nil {
 		return []PriceDataPoint{}, err
@@ -283,6 +288,7 @@ func validateCustomHistoricalPriceDate(date string) error {
 	return nil
 }
 
+// GetStockRestrictions fetches trading restrictions and limitations for a specific stock in the given region.
 func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region Region) ([]StockRestriction, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions", c.baseUrl), nil)
 	if err != nil {
@@ -302,6 +308,7 @@ func (c *Client) GetStockRestrictions(ctx context.Context, symbol string, region
 	return resp, nil
 }
 
+// GetAllRestrictions retrieves all trading restrictions and limitations for the specified region.
 func (c *Client) GetAllRestrictions(ctx context.Context, region Region) ([]StockRestriction, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/restrictions/all", c.baseUrl), nil)
 	if err != nil {
@@ -320,6 +327,7 @@ func (c *Client) GetAllRestrictions(ctx context.Context, region Region) ([]Stock
 	return resp, nil
 }
 
+// GetTickRules retrieves tick size rules and price limits for a stock in the specified region.
 func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region) (TickRule, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/stock/rules", c.baseUrl), nil)
 	if err != nil {

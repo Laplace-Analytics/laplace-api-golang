@@ -1,91 +1,164 @@
 package laplace
 
-// import (
-// 	"context"
-// 	"testing"
-// 	"time"
+import (
+	"context"
+	"slices"
+	"testing"
+	"time"
+)
 
-// 	"github.com/sirupsen/logrus"
-// 	"github.com/stretchr/testify/require"
-// 	"github.com/stretchr/testify/suite"
-// )
+func TestGetLivePriceForBIST(t *testing.T) {
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
-// type LivePriceTestSuite struct {
-// 	*ClientTestSuite
-// }
+	client, err := NewClient(*cfg)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
-// func TestLivePrice(t *testing.T) {
-// 	suite.Run(t, &LivePriceTestSuite{
-// 		NewClientTestSuite(),
-// 	})
-// }
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// func (s *LivePriceTestSuite) TestBISTLivePrice() {
-// 	client := NewClient(s.Config, logrus.New())
-// 	symbols := []string{"TUPRS", "SASA", "THYAO", "GARAN", "YKBN"}
+	lc, err := client.GetLivePriceForBIST(ctx, []string{"AKBNK"})
+	if err != nil {
+		t.Fatalf("Failed to create live price client: %v", err)
+	}
+	defer lc.Close()
 
-// 	testLivePrice(s.T(), client, symbols, RegionTr)
-// }
+	receiveChan := lc.Receive()
 
-// func (s *LivePriceTestSuite) TestUSLivePrice() {
-// 	client := NewClient(s.Config, logrus.New())
-// 	symbols := []string{"AAPL", "GOOGL", "MSFT", "AMZN", "META"}
+	select {
+	case data := <-receiveChan:
+		if data.Error != nil {
+			t.Logf("Received error: %v", data.Error)
+		} else {
+			t.Logf("Received data: %+v", data.Data)
+		}
+	case <-ctx.Done():
+		t.Log("Timeout waiting for data")
+	}
+}
 
-// 	testLivePrice(s.T(), client, symbols, RegionUs)
-// }
+func TestGetLivePriceForUS(t *testing.T) {
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
 
-// func testLivePrice(t *testing.T, client *Client, symbols []string, region Region) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
+	client, err := NewClient(*cfg)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
-// 	var livePrices <-chan StockLiveData
-// 	var errs <-chan error
-// 	var close func()
-// 	var err error
-// 	if region == RegionTr {
-// 		var bistLiveData <-chan BISTStockLiveData
-// 		bistLiveData, errs, close, err = client.GetLivePriceForBIST(ctx, symbols)
-// 		livePrices = convertChannel(bistLiveData)
-// 	} else {
-// 		var usLiveData <-chan USStockLiveData
-// 		usLiveData, errs, close, err = getLivePrice[USStockLiveData](client, ctx, symbols, region)
-// 		livePrices = convertChannel(usLiveData)
-// 	}
-// 	require.NoError(t, err)
-// 	defer close()
-// 	livePriceCount := 0
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// 	for {
-// 		select {
-// 		case livePrice, ok := <-livePrices:
-// 			if !ok {
-// 				// Channel closed
-// 				break
-// 			}
-// 			livePriceCount++
-// 			require.NotEmpty(t, livePrice)
-// 			if livePriceCount > 3 {
-// 				return
-// 			}
-// 		case err, ok := <-errs:
-// 			if !ok {
-// 				// Error channel closed
-// 				continue
-// 			}
-// 			require.Fail(t, "Error occurred during live price retrieval", err)
-// 			return
-// 		}
-// 	}
-// }
+	lc, err := client.GetLivePriceForUS(ctx, []string{"AAPL"})
+	if err != nil {
+		t.Fatalf("Failed to create live price client: %v", err)
+	}
+	defer lc.Close()
 
-// // Add this helper function at the end of the file
-// func convertChannel[T StockLiveData](ch <-chan T) <-chan StockLiveData {
-// 	out := make(chan StockLiveData)
-// 	go func() {
-// 		defer close(out)
-// 		for v := range ch {
-// 			out <- v
-// 		}
-// 	}()
-// 	return out
-// }
+	receiveChan := lc.Receive()
+
+	select {
+	case data := <-receiveChan:
+		if data.Error != nil {
+			t.Logf("Received error: %v", data.Error)
+		} else {
+			t.Logf("Received data: %+v", data.Data)
+		}
+	case <-ctx.Done():
+		t.Log("Timeout waiting for data")
+	}
+}
+
+func TestLivePriceSubscribe(t *testing.T) {
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	client, err := NewClient(*cfg)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	lc, err := client.GetLivePriceForBIST(ctx, []string{"AKBNK"})
+	if err != nil {
+		t.Fatalf("Failed to create live price client: %v", err)
+	}
+	defer lc.Close()
+
+	receivedData := []string{}
+
+	timer := time.NewTimer(5 * time.Second)
+	go func() {
+		<-timer.C
+		lc.Subscribe(ctx, []string{"TUPRS", "ASELS"})
+		receivedData = append(receivedData, "SWITCH")
+
+		timer.Reset(5 * time.Second)
+		<-timer.C
+		lc.Close()
+	}()
+
+	receiveChan := lc.Receive()
+	for data := range receiveChan {
+		if data.Error != nil {
+			t.Fatalf("Received error: %v", data.Error)
+		}
+
+		receivedData = append(receivedData, data.Data.Symbol)
+	}
+
+	idxOfSwitch := slices.Index(receivedData, "SWITCH")
+
+	if idxOfSwitch > 0 {
+		beforeSwitch := receivedData[:idxOfSwitch]
+		if !slices.Contains(beforeSwitch, "AKBNK") {
+			t.Error("Did not receive AKBNK data before switch")
+		}
+	}
+
+	if idxOfSwitch >= 0 && idxOfSwitch < len(receivedData)-1 {
+		afterSwitch := receivedData[idxOfSwitch+1:]
+		if !slices.Contains(afterSwitch, "TUPRS") {
+			t.Error("Did not receive TUPRS data after switch")
+		}
+		if !slices.Contains(afterSwitch, "ASELS") {
+			t.Error("Did not receive ASELS data after switch")
+		}
+	}
+}
+
+func TestLivePriceClose(t *testing.T) {
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	client, err := NewClient(*cfg)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	lc, err := client.GetLivePriceForBIST(ctx, []string{"AKBNK"})
+	if err != nil {
+		t.Fatalf("Failed to create live price client: %v", err)
+	}
+
+	err = lc.Close()
+	if err != nil {
+		t.Fatalf("Close failed: %v", err)
+	}
+
+}

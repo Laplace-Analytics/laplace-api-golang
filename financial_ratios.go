@@ -30,6 +30,7 @@ const (
 	PeerTypeIndustry PeerType = "industry"
 )
 
+// GetFinancialRatioComparison retrieves financial ratio comparisons for a stock against its sector or industry peers.
 func (c *Client) GetFinancialRatioComparison(ctx context.Context, symbol string, region Region, peerType PeerType) ([]StockPeerFinancialRatioComparison, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/financial-ratio-comparison", c.baseUrl), nil)
 	if err != nil {
@@ -167,6 +168,7 @@ const (
 	HistoricalRatiosKeyPaidInCapital                        HistoricalRatiosKey = "odenmis_sermaye"
 )
 
+// GetHistoricalRatios fetches historical financial ratios for a stock over time with sector comparisons.
 func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []HistoricalRatiosKey, region Region) ([]StockHistoricalRatios, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-ratios", c.baseUrl), nil)
 	if err != nil {
@@ -202,6 +204,7 @@ type StockHistoricalRatiosDescription struct {
 	IsRealtime  bool      `json:"isRealtime"`
 }
 
+// GetHistoricalRatiosDescriptions retrieves metadata and descriptions for available historical financial ratios.
 func (c *Client) GetHistoricalRatiosDescriptions(ctx context.Context, locale Locale, region Region) ([]StockHistoricalRatiosDescription, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-ratios/descriptions", c.baseUrl), nil)
 	if err != nil {
@@ -275,6 +278,7 @@ type FinancialSheetDate struct {
 	Year  int `json:"year"`
 }
 
+// GetHistoricalFinancialSheets fetches historical financial statements (income statement, balance sheet, cash flow) for a stock.
 func (c *Client) GetHistoricalFinancialSheets(ctx context.Context, symbol string, from FinancialSheetDate, to FinancialSheetDate, sheetType FinancialSheetType, period FinancialSheetPeriod, currency Currency, region Region) (HistoricalFinancialSheets, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v3/stock/historical-financial-sheets", c.baseUrl), nil)
 	if err != nil {

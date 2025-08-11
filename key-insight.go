@@ -11,6 +11,7 @@ type KeyInsight struct {
 	Insight string `json:"insight"`
 }
 
+// GetKeyInsights fetches key insights and analysis for a specific stock symbol.
 func (c *Client) GetKeyInsights(ctx context.Context, symbol string, region Region) (*KeyInsight, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/key-insight", c.baseUrl), nil)
 	if err != nil {

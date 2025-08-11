@@ -113,6 +113,7 @@ type FundHistoricalPrice struct {
 	InvestorCount int     `json:"investorCount"`
 }
 
+// GetFunds retrieves a paginated list of investment funds for the specified region with basic fund information.
 func (c *Client) GetFunds(ctx context.Context, region Region, page int, pageSize int) ([]Fund, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/fund", c.baseUrl), nil)
 	if err != nil {
@@ -133,6 +134,7 @@ func (c *Client) GetFunds(ctx context.Context, region Region, page int, pageSize
 	return resp, nil
 }
 
+// GetFundStats fetches comprehensive statistical data for a specific fund including returns, risk metrics, and performance indicators.
 func (c *Client) GetFundStats(ctx context.Context, symbol string, region Region) (*FundStats, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/fund/stats", c.baseUrl), nil)
 	if err != nil {
@@ -152,6 +154,7 @@ func (c *Client) GetFundStats(ctx context.Context, symbol string, region Region)
 	return &resp, nil
 }
 
+// GetFundDistribution retrieves detailed asset allocation and distribution information for a specific fund.
 func (c *Client) GetFundDistribution(ctx context.Context, symbol string, region Region) (*FundDistribution, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/fund/distribution", c.baseUrl), nil)
 	if err != nil {
@@ -171,6 +174,7 @@ func (c *Client) GetFundDistribution(ctx context.Context, symbol string, region 
 	return &resp, nil
 }
 
+// GetHistoricalFundPrices retrieves historical price data for a fund over the specified time period.
 func (c *Client) GetHistoricalFundPrices(ctx context.Context, symbol string, region Region, period HistoricalFundPricePeriod) ([]FundHistoricalPrice, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/fund/price", c.baseUrl), nil)
 	if err != nil {

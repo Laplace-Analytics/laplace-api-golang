@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"testing"
 )
 
-func findModuleRoot(t testing.TB) (string, error) {
-	t.Helper()
+func findModuleRoot() (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", err
