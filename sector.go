@@ -38,7 +38,7 @@ func (c *Client) GetAllSectors(ctx context.Context, region Region, locale Locale
 }
 
 // GetSectorDetail fetches detailed information about a specific sector including its constituent stocks.
-func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
+func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/sector/%s", c.baseUrl, id)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -48,10 +48,6 @@ func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, 
 	q := req.URL.Query()
 	q.Add("locale", string(locale))
 	q.Add("region", string(region))
-
-	if sortBy != "" {
-		q.Add("sortBy", string(sortBy))
-	}
 	req.URL.RawQuery = q.Encode()
 
 	res, err := sendRequest[CollectionDetail](ctx, c, req)

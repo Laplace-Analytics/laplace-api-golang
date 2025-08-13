@@ -42,7 +42,7 @@ func (s *IndustryTestSuite) TestGetIndustryDetails() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetIndustryDetail(ctx, "65533e441fa5c7b58afa0944", RegionTr, LocaleTr, "")
+	resp, err := client.GetIndustryDetail(ctx, "65533e441fa5c7b58afa0944", RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 	s.Require().NotEmpty(resp.ID)

@@ -38,7 +38,7 @@ func (c *Client) GetAllIndustries(ctx context.Context, region Region, locale Loc
 }
 
 // GetIndustryDetail fetches detailed information about a specific industry including its constituent stocks.
-func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
+func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/industry/%s", c.baseUrl, id)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -48,9 +48,6 @@ func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region
 	q := req.URL.Query()
 	q.Add("region", string(region))
 	q.Add("locale", string(locale))
-	if sortBy != "" {
-		q.Add("sortBy", string(sortBy))
-	}
 	req.URL.RawQuery = q.Encode()
 
 	res, err := sendRequest[CollectionDetail](ctx, c, req)

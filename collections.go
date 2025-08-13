@@ -13,7 +13,6 @@ type CollectionType string
 const (
 	CollectionTypeTheme       CollectionType = "theme"
 	CollectionTypeCustomTheme CollectionType = "custom-theme"
-	CollectionTypeCollection  CollectionType = "collection"
 )
 
 type Region string
@@ -112,7 +111,23 @@ func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale)
 
 // GetAllCollections retrieves all collections available for the specified region and locale.
 func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeCollection, region, locale)
+	endpoint := fmt.Sprintf("%s/api/v1/collection", c.baseUrl)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("locale", string(locale))
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[[]Collection](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // GetThemeDetail fetches detailed information about a specific investment theme including its constituent stocks.
@@ -122,5 +137,21 @@ func (c *Client) GetThemeDetail(ctx context.Context, id string, region Region, l
 
 // GetCollectionDetail fetches detailed information about a specific collection including its constituent stocks.
 func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeCollection, region, locale, "")
+	endpoint := fmt.Sprintf("%s/api/v1/collection/%s", c.baseUrl, id)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return CollectionDetail{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("locale", string(locale))
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[CollectionDetail](ctx, c, req)
+	if err != nil {
+		return CollectionDetail{}, err
+	}
+
+	return res, nil
 }

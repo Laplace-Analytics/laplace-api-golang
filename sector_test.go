@@ -42,7 +42,7 @@ func (s *SectorTestSuite) TestGetSectorDetails() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetSectorDetail(ctx, "65533e047844ee7afe9941b9", RegionTr, LocaleTr, "")
+	resp, err := client.GetSectorDetail(ctx, "65533e047844ee7afe9941b9", RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 	s.Require().NotEmpty(resp.ID)

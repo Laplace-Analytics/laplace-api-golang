@@ -98,7 +98,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get industry detail
-		_, err = client.GetIndustryDetail(ctx, "65533e441fa5c7b58afa0957", RegionTr, LocaleEn, "")
+		_, err = client.GetIndustryDetail(ctx, "65533e441fa5c7b58afa0957", RegionTr, LocaleEn)
 		if err != nil {
 			t.Errorf("GetIndustryDetail failed: %v", err)
 		}
@@ -110,7 +110,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get sector detail
-		_, err = client.GetSectorDetail(ctx, "65533e047844ee7afe9941bf", RegionTr, LocaleEn, "")
+		_, err = client.GetSectorDetail(ctx, "65533e047844ee7afe9941bf", RegionTr, LocaleEn)
 		if err != nil {
 			t.Errorf("GetSectorDetail failed: %v", err)
 		}
