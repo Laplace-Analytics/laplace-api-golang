@@ -110,7 +110,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get sector detail
-		_, err = client.GetSectorDetail(ctx, "65533e047844ee7afe9941bf", RegionTr, LocaleEn)
+		_, err = client.GetSectorDetail(ctx, "65533e047844ee7afe9941bf", RegionTr, LocaleEn, "")
 		if err != nil {
 			t.Errorf("GetSectorDetail failed: %v", err)
 		}

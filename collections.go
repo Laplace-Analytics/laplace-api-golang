@@ -11,8 +11,6 @@ import (
 type CollectionType string
 
 const (
-	CollectionTypeSector      CollectionType = "sector"
-	CollectionTypeIndustry    CollectionType = "industry"
 	CollectionTypeTheme       CollectionType = "theme"
 	CollectionTypeCustomTheme CollectionType = "custom-theme"
 	CollectionTypeCollection  CollectionType = "collection"
@@ -115,11 +113,6 @@ func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale)
 // GetAllCollections retrieves all collections available for the specified region and locale.
 func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
 	return c.getAllCollections(ctx, CollectionTypeCollection, region, locale)
-}
-
-// GetSectorDetail fetches detailed information about a specific sector including its constituent stocks.
-func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeSector, region, locale, "")
 }
 
 // GetThemeDetail fetches detailed information about a specific investment theme including its constituent stocks.
