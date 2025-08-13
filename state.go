@@ -58,3 +58,18 @@ func (c *Client) GetStateOfAllStocks(ctx context.Context, region Region, page, s
 
 	return res, nil
 }
+
+func (c *Client) GetStateForStock(ctx context.Context, symbol string) (MarketState, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/state/stock/%s", c.baseUrl, symbol)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return MarketState{}, err
+	}
+
+	res, err := sendRequest[MarketState](ctx, c, req)
+	if err != nil {
+		return MarketState{}, err
+	}
+
+	return res, nil
+}

@@ -18,6 +18,14 @@ type EarningsTranscriptWithSummary struct {
 	HasSummary bool      `json:"has_summary"`
 }
 
+type EarningsTranscriptListItem struct {
+	Symbol     string    `json:"symbol"`
+	Year       int       `json:"year"`
+	Quarter    int       `json:"quarter"`
+	Date       time.Time `json:"date"`
+	FiscalYear int       `json:"fiscal_year"`
+}
+
 func (c *Client) GetEarningsTranscriptWithSummary(ctx context.Context, symbol string, year, quarter int) (*EarningsTranscriptWithSummary, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/earnings/transcript", c.baseUrl)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -32,6 +40,26 @@ func (c *Client) GetEarningsTranscriptWithSummary(ctx context.Context, symbol st
 	req.URL.RawQuery = q.Encode()
 
 	res, err := sendRequest[*EarningsTranscriptWithSummary](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) GetEarningsTranscriptList(ctx context.Context, region Region, symbol string) ([]EarningsTranscriptListItem, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/earnings/transcripts", c.baseUrl)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("symbol", symbol)
+	q.Add("region", string(region))
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[[]EarningsTranscriptListItem](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
