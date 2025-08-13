@@ -107,16 +107,6 @@ func (c *Client) getCollectionDetail(ctx context.Context, id string, collectionT
 	return resp, nil
 }
 
-// GetAllSectors retrieves all sectors available for the specified region and locale.
-func (c *Client) GetAllSectors(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeSector, region, locale)
-}
-
-// GetAllIndustries retrieves all industries available for the specified region and locale.
-func (c *Client) GetAllIndustries(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeIndustry, region, locale)
-}
-
 // GetAllThemes retrieves all investment themes available for the specified region and locale.
 func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
 	return c.getAllCollections(ctx, CollectionTypeTheme, region, locale)
@@ -130,11 +120,6 @@ func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Lo
 // GetSectorDetail fetches detailed information about a specific sector including its constituent stocks.
 func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
 	return c.getCollectionDetail(ctx, id, CollectionTypeSector, region, locale, "")
-}
-
-// GetIndustryDetail fetches detailed information about a specific industry including its constituent stocks.
-func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeIndustry, region, locale, "")
 }
 
 // GetThemeDetail fetches detailed information about a specific investment theme including its constituent stocks.

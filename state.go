@@ -16,6 +16,7 @@ type MarketState struct {
 	StockSymbol   *string   `json:"stockSymbol,omitempty"`
 }
 
+// GetStateOfAllMarkets returns the state of all markets for a given region.
 func (c *Client) GetStateOfAllMarkets(ctx context.Context, region Region, page, size int) (PaginatedResponse[*MarketState], error) {
 	endpoint := fmt.Sprintf("%s/api/v1/state/all", c.baseUrl)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
