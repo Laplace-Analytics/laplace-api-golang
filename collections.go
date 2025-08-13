@@ -8,13 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type CollectionType string
-
-const (
-	CollectionTypeTheme       CollectionType = "theme"
-	CollectionTypeCustomTheme CollectionType = "custom-theme"
-)
-
 type Region string
 
 const (
@@ -51,63 +44,11 @@ type CollectionDetail struct {
 	Stocks      []Stock `json:"stocks"`
 }
 
-func (c *Client) getAllCollections(ctx context.Context, collectionType CollectionType, region Region, locale Locale) ([]Collection, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/%s", c.baseUrl, collectionType), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	if region != "" {
-		q.Add("region", string(region))
-	}
-	q.Add("locale", string(locale))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[[]Collection](ctx, c, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 type SortBy string
 
 const (
 	SortByPriceChange SortBy = "price_change"
 )
-
-func (c *Client) getCollectionDetail(ctx context.Context, id string, collectionType CollectionType, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/%s/%s", c.baseUrl, collectionType, id), nil)
-	if err != nil {
-		return CollectionDetail{}, err
-	}
-
-	q := req.URL.Query()
-	if region != RegionNone {
-		q.Add("region", string(region))
-	}
-	if locale != LocaleNone {
-		q.Add("locale", string(locale))
-	}
-	if sortBy != "" {
-		q.Add("sortBy", string(sortBy))
-	}
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[CollectionDetail](ctx, c, req)
-	if err != nil {
-		return CollectionDetail{}, err
-	}
-
-	return resp, nil
-}
-
-// GetAllThemes retrieves all investment themes available for the specified region and locale.
-func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeTheme, region, locale)
-}
 
 // GetAllCollections retrieves all collections available for the specified region and locale.
 func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
@@ -128,11 +69,6 @@ func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Lo
 	}
 
 	return res, nil
-}
-
-// GetThemeDetail fetches detailed information about a specific investment theme including its constituent stocks.
-func (c *Client) GetThemeDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeTheme, region, locale, "")
 }
 
 // GetCollectionDetail fetches detailed information about a specific collection including its constituent stocks.

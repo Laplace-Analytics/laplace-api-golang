@@ -12,12 +12,46 @@ import (
 
 // GetAllCustomThemes retrieves all custom investment themes available for the specified locale.
 func (c *Client) GetAllCustomThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeCustomTheme, region, locale)
+	endpoint := fmt.Sprintf("%s/api/v1/custom-theme", c.baseUrl)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("locale", string(locale))
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[[]Collection](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // GetCustomThemeDetail fetches detailed information about a specific custom theme including its constituent stocks.
 func (c *Client) GetCustomThemeDetail(ctx context.Context, id string, locale Locale, sortBy SortBy) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeCustomTheme, RegionNone, locale, sortBy)
+	endpoint := fmt.Sprintf("%s/api/v1/custom-theme/%s", c.baseUrl, id)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return CollectionDetail{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("locale", string(locale))
+	if sortBy != "" {
+		q.Add("sortBy", string(sortBy))
+	}
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[CollectionDetail](ctx, c, req)
+	if err != nil {
+		return CollectionDetail{}, err
+	}
+
+	return res, nil
 }
 
 type CollectionStatus string
