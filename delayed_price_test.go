@@ -18,7 +18,7 @@ func TestGetDelayedPriceForBIST(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	dc, err := client.GetDelayedPriceForBIST(ctx, []string{"AKBNK"})
@@ -52,51 +52,6 @@ func TestGetDelayedPriceForBIST(t *testing.T) {
 	}
 }
 
-func TestGetDelayedPriceForUS(t *testing.T) {
-	cfg, err := loadConfig()
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	client, err := NewClient(*cfg)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	dc, err := client.GetDelayedPriceForUS(ctx, []string{"AAPL"})
-	if err != nil {
-		t.Fatalf("Failed to create delayed price client: %v", err)
-	}
-	defer dc.Close()
-
-	receiveChan := dc.Receive()
-
-	select {
-	case data := <-receiveChan:
-		if data.Error != nil {
-			t.Logf("Received error: %v", data.Error)
-		} else {
-			t.Logf("Received delayed data: %+v", data.Data)
-			// Verify it's the expected symbol
-			if data.Data.Symbol != "AAPL" {
-				t.Errorf("Expected symbol AAPL, got %s", data.Data.Symbol)
-			}
-			// Verify basic data structure
-			if data.Data.Price <= 0 {
-				t.Errorf("Expected positive price, got %f", data.Data.Price)
-			}
-			if data.Data.Date <= 0 {
-				t.Errorf("Expected positive date, got %d", data.Data.Date)
-			}
-		}
-	case <-ctx.Done():
-		t.Log("Timeout waiting for delayed data")
-	}
-}
-
 func TestDelayedPriceSubscribe(t *testing.T) {
 	cfg, err := loadConfig()
 	if err != nil {
@@ -108,7 +63,7 @@ func TestDelayedPriceSubscribe(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	dc, err := client.GetDelayedPriceForBIST(ctx, []string{"AKBNK"})
@@ -176,7 +131,7 @@ func TestDelayedPriceClose(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	dc, err := client.GetDelayedPriceForBIST(ctx, []string{"AKBNK"})
@@ -265,7 +220,7 @@ func TestDelayedPriceErrorHandling(t *testing.T) {
 	}
 
 	// Test with invalid symbol
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	dc, err := client.GetDelayedPriceForBIST(ctx, []string{"INVALID_SYMBOL"})

@@ -150,9 +150,3 @@ type USStockDelayedData struct {
 func (c *Client) GetDelayedPriceForBIST(ctx context.Context, symbols []string) (DelayedPriceClient[BISTStockDelayedData], error) {
 	return GetDelayedPrice[BISTStockDelayedData](c, ctx, symbols, RegionTr)
 }
-
-// GetDelayedPriceForUS streams delayed price data for US stock symbols via Server-Sent Events.
-// Sending no symbols means all US stocks will be streamed.
-func (c *Client) GetDelayedPriceForUS(ctx context.Context, symbols []string) (DelayedPriceClient[USStockDelayedData], error) {
-	return GetDelayedPrice[USStockDelayedData](c, ctx, symbols, RegionUs)
-}
