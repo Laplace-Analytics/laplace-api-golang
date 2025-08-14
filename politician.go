@@ -96,7 +96,7 @@ func (c *Client) GetAllTopHoldings(ctx context.Context) ([]TopHolding, error) {
 	return res, nil
 }
 
-func (c *Client) GetPoliticianDetail(ctx context.Context, id int) (PoliticianDetail, error) {
+func (c *Client) GetPoliticianPortfolioById(ctx context.Context, id int) (PoliticianDetail, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/politician/%d", c.baseUrl, id)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
