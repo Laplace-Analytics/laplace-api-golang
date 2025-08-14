@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type LivePriceClient[T any] interface {
+type DelayedPriceClient[T any] interface {
 	Close() error
 	Receive() <-chan LivePriceResult[T]
 	Subscribe(ctx context.Context, symbols []string) error
 }
 
-type livePriceClient[T any] struct {
+type delayedPriceClient[T any] struct {
 	mu         sync.RWMutex
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -27,7 +27,7 @@ type livePriceClient[T any] struct {
 	closed     bool
 }
 
-func (c *livePriceClient[T]) Close() error {
+func (c *delayedPriceClient[T]) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -42,14 +42,14 @@ func (c *livePriceClient[T]) Close() error {
 	return nil
 }
 
-func (c *livePriceClient[T]) Receive() <-chan LivePriceResult[T] {
+func (c *delayedPriceClient[T]) Receive() <-chan LivePriceResult[T] {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	return c.outputChan
 }
 
-func (c *livePriceClient[T]) Subscribe(ctx context.Context, symbols []string) error {
+func (c *delayedPriceClient[T]) Subscribe(ctx context.Context, symbols []string) error {
 	if ctx == nil {
 		return fmt.Errorf("context cannot be nil")
 	}
@@ -59,9 +59,9 @@ func (c *livePriceClient[T]) Subscribe(ctx context.Context, symbols []string) er
 
 	c.cancel()
 
-	newClient, err := GetLivePrice[T](c.c, ctx, symbols, c.region)
+	newClient, err := GetDelayedPrice[T](c.c, ctx, symbols, c.region)
 	if err != nil {
-		return fmt.Errorf("failed to create live price client: %w", err)
+		return fmt.Errorf("failed to create delayed price client: %w", err)
 	}
 
 	c.ctx = ctx
@@ -74,7 +74,7 @@ func (c *livePriceClient[T]) Subscribe(ctx context.Context, symbols []string) er
 	return nil
 }
 
-func (c *livePriceClient[T]) forwardData() {
+func (c *delayedPriceClient[T]) forwardData() {
 	defer func() {
 		if r := recover(); r != nil {
 			c.c.logger.Error("panic in forwardData", r)
@@ -99,7 +99,7 @@ func (c *livePriceClient[T]) forwardData() {
 	}
 }
 
-func GetLivePrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (LivePriceClient[T], error) {
+func GetDelayedPrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (DelayedPriceClient[T], error) {
 	if c == nil {
 		return nil, fmt.Errorf("client cannot be nil")
 	}
@@ -108,7 +108,7 @@ func GetLivePrice[T any](c *Client, ctx context.Context, symbols []string, regio
 	}
 
 	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v2/stock/price/live?filter=%s&region=%s&stream=%s",
+	url := fmt.Sprintf("%s/api/v2/stock/price/delayed?filter=%s&region=%s&stream=%s",
 		c.baseUrl, strings.Join(symbols, ","), string(region), streamID)
 
 	channel, cancelFunc, err := sendSSERequest[T](ctx, c, url)
@@ -116,7 +116,7 @@ func GetLivePrice[T any](c *Client, ctx context.Context, symbols []string, regio
 		return nil, fmt.Errorf("failed to establish SSE connection: %w", err)
 	}
 
-	client := &livePriceClient[T]{
+	client := &delayedPriceClient[T]{
 		ctx:        ctx,
 		sseChan:    channel,
 		c:          c,
@@ -132,27 +132,27 @@ func GetLivePrice[T any](c *Client, ctx context.Context, symbols []string, regio
 	return client, nil
 }
 
-type BISTStockLiveData struct {
+type BISTStockDelayedData struct {
 	Symbol             string  `json:"s"`
 	DailyPercentChange float64 `json:"ch"`
 	ClosePrice         float64 `json:"p"`
 	Date               int64   `json:"d"`
 }
 
-// GetLivePriceForBIST streams real-time price data for BIST (Turkish) stock symbols via Server-Sent Events.
-// Sending no symbols means all BIST stocks will be streamed.
-func (c *Client) GetLivePriceForBIST(ctx context.Context, symbols []string) (LivePriceClient[BISTStockLiveData], error) {
-	return GetLivePrice[BISTStockLiveData](c, ctx, symbols, RegionTr)
-}
-
-type USStockLiveData struct {
+type USStockDelayedData struct {
 	Symbol string  `json:"s"`
 	Price  float64 `json:"p"`
 	Date   int64   `json:"d"`
 }
 
-// GetLivePriceForUS streams real-time price data for US stock symbols via Server-Sent Events.
+// GetDelayedPriceForBIST streams delayed price data for BIST (Turkish) stock symbols via Server-Sent Events.
+// Sending no symbols means all BIST stocks will be streamed.
+func (c *Client) GetDelayedPriceForBIST(ctx context.Context, symbols []string) (DelayedPriceClient[BISTStockDelayedData], error) {
+	return GetDelayedPrice[BISTStockDelayedData](c, ctx, symbols, RegionTr)
+}
+
+// GetDelayedPriceForUS streams delayed price data for US stock symbols via Server-Sent Events.
 // Sending no symbols means all US stocks will be streamed.
-func (c *Client) GetLivePriceForUS(ctx context.Context, symbols []string) (LivePriceClient[USStockLiveData], error) {
-	return GetLivePrice[USStockLiveData](c, ctx, symbols, RegionUs)
+func (c *Client) GetDelayedPriceForUS(ctx context.Context, symbols []string) (DelayedPriceClient[USStockDelayedData], error) {
+	return GetDelayedPrice[USStockDelayedData](c, ctx, symbols, RegionUs)
 }
