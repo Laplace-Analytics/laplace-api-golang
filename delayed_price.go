@@ -108,7 +108,7 @@ func GetDelayedPrice[T any](c *Client, ctx context.Context, symbols []string, re
 	}
 
 	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v2/stock/price/delayed?filter=%s&region=%s&stream=%s",
+	url := fmt.Sprintf("%s/api/v1/stock/price/delayed?filter=%s&region=%s&stream=%s",
 		c.baseUrl, strings.Join(symbols, ","), string(region), streamID)
 
 	channel, cancelFunc, err := sendSSERequest[T](ctx, c, url)
