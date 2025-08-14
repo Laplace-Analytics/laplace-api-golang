@@ -235,7 +235,7 @@ func TestDelayedPriceMultipleSymbols(t *testing.T) {
 				data.Data.Symbol, data.Data.ClosePrice, data.Data.DailyPercentChange)
 		case <-timeout:
 			t.Log("Timeout waiting for all symbols")
-			break
+			return
 		}
 	}
 
@@ -259,7 +259,7 @@ func TestDelayedPriceErrorHandling(t *testing.T) {
 	}
 
 	// Test with nil context
-	_, err = client.GetDelayedPriceForBIST(nil, []string{"AKBNK"})
+	_, err = client.GetDelayedPriceForBIST(context.Background(), []string{"AKBNK"})
 	if err == nil {
 		t.Error("Expected error with nil context")
 	}
