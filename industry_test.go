@@ -7,42 +7,42 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type CollectionsTestSuite struct {
+type IndustryTestSuite struct {
 	*ClientTestSuite
 }
 
-func TestCollections(t *testing.T) {
-	suite.Run(t, &CollectionsTestSuite{
+func TestIndustry(t *testing.T) {
+	suite.Run(t, &IndustryTestSuite{
 		NewClientTestSuite(),
 	})
 }
 
-func (s *CollectionsTestSuite) TestGetAllCollections() {
+func (s *IndustryTestSuite) TestGetAllIndustries() {
 	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
-	resp, err := client.GetAllCollections(ctx, RegionTr, LocaleTr)
+	resp, err := client.GetAllIndustries(ctx, RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 
 	hasStocks := false
-	for _, collection := range resp {
-		s.Require().NotEmpty(collection.ID)
-		s.Require().NotEmpty(collection.Title)
-		if collection.NumStocks > 0 {
+	for _, industry := range resp {
+		s.Require().NotEmpty(industry.ID)
+		s.Require().NotEmpty(industry.Title)
+		if industry.NumStocks > 0 {
 			hasStocks = true
 		}
 	}
 	s.Require().True(hasStocks)
 }
 
-func (s *CollectionsTestSuite) TestGetCollectionDetail() {
+func (s *IndustryTestSuite) TestGetIndustryDetails() {
 	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
-	resp, err := client.GetCollectionDetail(ctx, "620f455a0187ade00bb0d55f", RegionTr, LocaleTr)
+	resp, err := client.GetIndustryDetail(ctx, "65533e441fa5c7b58afa0944", RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 	s.Require().NotEmpty(resp.ID)

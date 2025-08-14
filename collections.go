@@ -8,16 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type CollectionType string
-
-const (
-	CollectionTypeSector      CollectionType = "sector"
-	CollectionTypeIndustry    CollectionType = "industry"
-	CollectionTypeTheme       CollectionType = "theme"
-	CollectionTypeCustomTheme CollectionType = "custom-theme"
-	CollectionTypeCollection  CollectionType = "collection"
-)
-
 type Region string
 
 const (
@@ -54,95 +44,50 @@ type CollectionDetail struct {
 	Stocks      []Stock `json:"stocks"`
 }
 
-func (c *Client) getAllCollections(ctx context.Context, collectionType CollectionType, region Region, locale Locale) ([]Collection, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/%s", c.baseUrl, collectionType), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	if region != "" {
-		q.Add("region", string(region))
-	}
-	q.Add("locale", string(locale))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[[]Collection](ctx, c, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 type SortBy string
 
 const (
 	SortByPriceChange SortBy = "price_change"
 )
 
-func (c *Client) getCollectionDetail(ctx context.Context, id string, collectionType CollectionType, region Region, locale Locale, sortBy SortBy) (CollectionDetail, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/%s/%s", c.baseUrl, collectionType, id), nil)
+// GetAllCollections retrieves all collections available for the specified region and locale.
+func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/collection", c.baseUrl)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(region))
+	q.Add("locale", string(locale))
+	req.URL.RawQuery = q.Encode()
+
+	res, err := sendRequest[[]Collection](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// GetCollectionDetail fetches detailed information about a specific collection including its constituent stocks.
+func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
+	endpoint := fmt.Sprintf("%s/api/v1/collection/%s", c.baseUrl, id)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return CollectionDetail{}, err
 	}
 
 	q := req.URL.Query()
-	if region != RegionNone {
-		q.Add("region", string(region))
-	}
-	if locale != LocaleNone {
-		q.Add("locale", string(locale))
-	}
-	if sortBy != "" {
-		q.Add("sortBy", string(sortBy))
-	}
+	q.Add("region", string(region))
+	q.Add("locale", string(locale))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[CollectionDetail](ctx, c, req)
+	res, err := sendRequest[CollectionDetail](ctx, c, req)
 	if err != nil {
 		return CollectionDetail{}, err
 	}
 
-	return resp, nil
-}
-
-// GetAllSectors retrieves all sectors available for the specified region and locale.
-func (c *Client) GetAllSectors(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeSector, region, locale)
-}
-
-// GetAllIndustries retrieves all industries available for the specified region and locale.
-func (c *Client) GetAllIndustries(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeIndustry, region, locale)
-}
-
-// GetAllThemes retrieves all investment themes available for the specified region and locale.
-func (c *Client) GetAllThemes(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeTheme, region, locale)
-}
-
-// GetAllCollections retrieves all collections available for the specified region and locale.
-func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Locale) ([]Collection, error) {
-	return c.getAllCollections(ctx, CollectionTypeCollection, region, locale)
-}
-
-// GetSectorDetail fetches detailed information about a specific sector including its constituent stocks.
-func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeSector, region, locale, "")
-}
-
-// GetIndustryDetail fetches detailed information about a specific industry including its constituent stocks.
-func (c *Client) GetIndustryDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeIndustry, region, locale, "")
-}
-
-// GetThemeDetail fetches detailed information about a specific investment theme including its constituent stocks.
-func (c *Client) GetThemeDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeTheme, region, locale, "")
-}
-
-// GetCollectionDetail fetches detailed information about a specific collection including its constituent stocks.
-func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
-	return c.getCollectionDetail(ctx, id, CollectionTypeCollection, region, locale, "")
+	return res, nil
 }

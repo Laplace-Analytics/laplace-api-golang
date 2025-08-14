@@ -7,42 +7,42 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type CollectionsTestSuite struct {
+type ThemeTestSuite struct {
 	*ClientTestSuite
 }
 
-func TestCollections(t *testing.T) {
-	suite.Run(t, &CollectionsTestSuite{
+func TestTheme(t *testing.T) {
+	suite.Run(t, &ThemeTestSuite{
 		NewClientTestSuite(),
 	})
 }
 
-func (s *CollectionsTestSuite) TestGetAllCollections() {
+func (s *ThemeTestSuite) TestGetAllThemes() {
 	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
-	resp, err := client.GetAllCollections(ctx, RegionTr, LocaleTr)
+	resp, err := client.GetAllThemes(ctx, RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 
 	hasStocks := false
-	for _, collection := range resp {
-		s.Require().NotEmpty(collection.ID)
-		s.Require().NotEmpty(collection.Title)
-		if collection.NumStocks > 0 {
+	for _, theme := range resp {
+		s.Require().NotEmpty(theme.ID)
+		s.Require().NotEmpty(theme.Title)
+		if theme.NumStocks > 0 {
 			hasStocks = true
 		}
 	}
 	s.Require().True(hasStocks)
 }
 
-func (s *CollectionsTestSuite) TestGetCollectionDetail() {
+func (s *ThemeTestSuite) TestGetThemeDetail() {
 	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
-	resp, err := client.GetCollectionDetail(ctx, "620f455a0187ade00bb0d55f", RegionTr, LocaleTr)
+	resp, err := client.GetThemeDetail(ctx, "64ff31e14ee6ea1024a76e73", RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 	s.Require().NotEmpty(resp.ID)
