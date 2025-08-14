@@ -99,17 +99,13 @@ func (c *delayedPriceClient[T]) forwardData() {
 	}
 }
 
-func GetDelayedPrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (DelayedPriceClient[T], error) {
+func GetDelayedPrice[T any](c *Client, ctx context.Context, symbols []string, region Region, url string) (DelayedPriceClient[T], error) {
 	if c == nil {
 		return nil, fmt.Errorf("client cannot be nil")
 	}
 	if ctx == nil {
 		return nil, fmt.Errorf("context cannot be nil")
 	}
-
-	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v1/stock/price/delayed?filter=%s&region=%s&stream=%s",
-		c.baseUrl, strings.Join(symbols, ","), string(region), streamID)
 
 	channel, cancelFunc, err := sendSSERequest[T](ctx, c, url)
 	if err != nil {
@@ -148,11 +144,19 @@ type USStockDelayedData struct {
 // GetDelayedPriceForBIST streams delayed price data for BIST (Turkish) stock symbols via Server-Sent Events.
 // Sending no symbols means all BIST stocks will be streamed.
 func (c *Client) GetDelayedPriceForBIST(ctx context.Context, symbols []string) (DelayedPriceClient[BISTStockDelayedData], error) {
-	return GetDelayedPrice[BISTStockDelayedData](c, ctx, symbols, RegionTr)
+	streamID := uuid.New().String()
+	url := fmt.Sprintf("%s/api/v1/stock/price/delayed?filter=%s&region=%s&stream=%s",
+		c.baseUrl, strings.Join(symbols, ","), string(RegionTr), streamID)
+
+	return GetDelayedPrice[BISTStockDelayedData](c, ctx, symbols, RegionTr, url)
 }
 
 // GetDelayedPriceForUS streams delayed price data for US stock symbols via Server-Sent Events.
 // Sending no symbols means all US stocks will be streamed.
 func (c *Client) GetDelayedPriceForUS(ctx context.Context, symbols []string) (DelayedPriceClient[USStockDelayedData], error) {
-	return GetDelayedPrice[USStockDelayedData](c, ctx, symbols, RegionUs)
+	streamID := uuid.New().String()
+	url := fmt.Sprintf("%s/api/v1/stock/price/delayed?filter=%s&region=%s&stream=%s",
+		c.baseUrl, strings.Join(symbols, ","), string(RegionUs), streamID)
+
+	return GetDelayedPrice[USStockDelayedData](c, ctx, symbols, RegionUs, url)
 }
