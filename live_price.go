@@ -9,127 +9,238 @@ import (
 	"github.com/google/uuid"
 )
 
+// LivePriceType represents the type of live price stream
+type LivePriceType string
+
+const (
+	LivePriceTypePrice        LivePriceType = "price"
+	LivePriceTypeDelayedPrice LivePriceType = "delayed-price"
+	LivePriceTypeOrderBook    LivePriceType = "order-book"
+)
+
+// MessageType represents the type of message in live data streams
+type MessageType string
+
+const (
+	MessageTypePrice       MessageType = "pr"
+	MessageTypeStateChange MessageType = "state_change"
+	MessageTypeHeartbeat   MessageType = "heartbeat"
+	MessageTypeOrderbook   MessageType = "ob"
+)
+
+// LiveMessageV2 is a generic wrapper for live price messages
+type LiveMessageV2[T any] struct {
+	Data   T           `json:"data"`
+	Symbol string      `json:"symbol"`
+	Type   MessageType `json:"type"`
+}
+
+// LevelSide represents the side of an orderbook level
+type LevelSide string
+
+const (
+	LevelSideBid LevelSide = "bid"
+	LevelSideAsk LevelSide = "ask"
+)
+
+// OrderbookLevel represents a single level in the orderbook
+type OrderbookLevel struct {
+	ID    int       `json:"level"`
+	Side  LevelSide `json:"side"`
+	Price float64   `json:"price"`
+	Size  float64   `json:"size"`
+}
+
+// OrderbookDeletedLevel represents a deleted level in the orderbook
+type OrderbookDeletedLevel struct {
+	ID   int       `json:"level"`
+	Side LevelSide `json:"side"`
+}
+
+// BISTStockOrderBookData represents BIST stock order book data
+type BISTStockOrderBookData struct {
+	Updated []OrderbookLevel        `json:"updated"`
+	Deleted []OrderbookDeletedLevel `json:"deleted"`
+	Symbol  string                  `json:"s"`
+}
+
 type LivePriceClient[T any] interface {
 	Close() error
 	Receive() <-chan LivePriceResult[T]
 	Subscribe(ctx context.Context, symbols []string) error
 }
 
-type livePriceClient[T any] struct {
-	mu         sync.RWMutex
-	ctx        context.Context
-	cancel     context.CancelFunc
-	sseChan    <-chan LivePriceResult[T]
-	outputChan chan LivePriceResult[T]
-	c          *Client
-	region     Region
-	symbols    []string
-	closed     bool
+// LivePriceStream handles live price streaming for a specific region and type
+type LivePriceStream[T any] struct {
+	mu           sync.RWMutex
+	ctx          context.Context
+	cancel       context.CancelFunc
+	sseChan      <-chan LivePriceResult[T]
+	outputChan   chan LivePriceResult[T]
+	c            *Client
+	region       Region
+	priceType    LivePriceType
+	symbols      []string
+	closed       bool
+	isSubscribed bool
 }
 
-func (c *livePriceClient[T]) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.closed {
-		return nil
+// NewLivePriceStream creates a new LivePriceStream
+func NewLivePriceStream[T any](client *Client, priceType LivePriceType, region Region) *LivePriceStream[T] {
+	return &LivePriceStream[T]{
+		c:         client,
+		priceType: priceType,
+		region:    region,
+		closed:    false,
 	}
-
-	c.closed = true
-	c.cancel()
-	close(c.outputChan)
-
-	return nil
 }
 
-func (c *livePriceClient[T]) Receive() <-chan LivePriceResult[T] {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	return c.outputChan
-}
-
-func (c *livePriceClient[T]) Subscribe(ctx context.Context, symbols []string) error {
+// Subscribe subscribes to live price updates for given symbols
+func (s *LivePriceStream[T]) Subscribe(ctx context.Context, symbols []string) error {
 	if ctx == nil {
 		return fmt.Errorf("context cannot be nil")
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	c.cancel()
-
-	newClient, err := GetLivePrice[T](c.c, ctx, symbols, c.region)
-	if err != nil {
-		return fmt.Errorf("failed to create live price client: %w", err)
+	// Cleanup existing stream
+	if err := s.cleanupExistingStream(); err != nil {
+		return fmt.Errorf("failed to cleanup existing stream: %w", err)
 	}
 
-	c.ctx = ctx
-	c.cancel = func() { newClient.Close() }
-	c.sseChan = newClient.Receive()
-	c.symbols = symbols
-	c.closed = false
-	go c.forwardData()
+	s.symbols = symbols
+	s.outputChan = make(chan LivePriceResult[T], 100) // Buffered channel
+	s.closed = false
+	s.ctx = ctx
+
+	// Start streaming
+	if err := s.startStreaming(); err != nil {
+		return fmt.Errorf("failed to start streaming: %w", err)
+	}
+
+	s.isSubscribed = true
+	return nil
+}
+
+// Receive returns a channel to receive live price data
+func (s *LivePriceStream[T]) Receive() <-chan LivePriceResult[T] {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if !s.isSubscribed {
+		// Return a closed channel if not subscribed
+		ch := make(chan LivePriceResult[T])
+		close(ch)
+		return ch
+	}
+
+	return s.outputChan
+}
+
+// Close closes the stream and cleanup resources
+func (s *LivePriceStream[T]) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed {
+		return nil
+	}
+
+	s.closed = true
+	s.isSubscribed = false
+	return s.cleanupExistingStream()
+}
+
+// cleanupExistingStream cancels and cleans up existing streaming task
+func (s *LivePriceStream[T]) cleanupExistingStream() error {
+	if s.cancel != nil {
+		s.cancel()
+		s.cancel = nil
+	}
+
+	if s.outputChan != nil {
+		close(s.outputChan)
+		s.outputChan = nil
+	}
 
 	return nil
 }
 
-func (c *livePriceClient[T]) forwardData() {
+// buildStreamURL builds the streaming URL for the given symbols and region
+func (s *LivePriceStream[T]) buildStreamURL() string {
+	streamID := uuid.New().String()
+	symbolsParam := strings.Join(s.symbols, ",")
+
+	baseURL := s.c.baseUrl
+	var endpoint string
+
+	switch {
+	case s.priceType == LivePriceTypePrice && s.region == RegionTr:
+		endpoint = "/api/v2/stock/price/live"
+	case s.priceType == LivePriceTypeDelayedPrice:
+		endpoint = "/api/v1/stock/price/delayed"
+	case s.priceType == LivePriceTypeOrderBook:
+		endpoint = "/api/v1/stock/orderbook/live"
+	default:
+		endpoint = "/api/v2/stock/price/live"
+	}
+
+	return fmt.Sprintf("%s%s?filter=%s&region=%s&stream=%s",
+		baseURL, endpoint, symbolsParam, string(s.region), streamID)
+}
+
+// startStreaming starts the SSE streaming connection
+func (s *LivePriceStream[T]) startStreaming() error {
+	url := s.buildStreamURL()
+
+	ctxWithCancel, cancel := context.WithCancel(s.ctx)
+	s.cancel = cancel
+
+	channel, _, err := sendSSERequest[T](ctxWithCancel, s.c, url)
+	if err != nil {
+		return fmt.Errorf("failed to establish SSE connection: %w", err)
+	}
+
+	s.sseChan = channel
+	go s.forwardData()
+
+	return nil
+}
+
+// forwardData forwards data from SSE channel to output channel
+func (s *LivePriceStream[T]) forwardData() {
 	defer func() {
 		if r := recover(); r != nil {
-			c.c.logger.Error("panic in forwardData", r)
+			s.c.logger.Error("panic in forwardData", r)
 		}
 	}()
 
 	for {
 		select {
-		case data, ok := <-c.sseChan:
+		case data, ok := <-s.sseChan:
 			if !ok {
 				return
 			}
 
-			select {
-			case c.outputChan <- data:
-			case <-c.ctx.Done():
+			s.mu.RLock()
+			outputChan := s.outputChan
+			closed := s.closed
+			s.mu.RUnlock()
+
+			if closed || outputChan == nil {
 				return
 			}
-		case <-c.ctx.Done():
+
+			select {
+			case outputChan <- data:
+			case <-s.ctx.Done():
+				return
+			}
+		case <-s.ctx.Done():
 			return
 		}
 	}
-}
-
-func GetLivePrice[T any](c *Client, ctx context.Context, symbols []string, region Region) (LivePriceClient[T], error) {
-	if c == nil {
-		return nil, fmt.Errorf("client cannot be nil")
-	}
-	if ctx == nil {
-		return nil, fmt.Errorf("context cannot be nil")
-	}
-
-	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v1/stock/price/live?filter=%s&region=%s&stream=%s",
-		c.baseUrl, strings.Join(symbols, ","), string(region), streamID)
-
-	channel, cancelFunc, err := sendSSERequest[T](ctx, c, url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to establish SSE connection: %w", err)
-	}
-
-	client := &livePriceClient[T]{
-		ctx:        ctx,
-		sseChan:    channel,
-		c:          c,
-		region:     region,
-		symbols:    symbols,
-		outputChan: make(chan LivePriceResult[T]),
-		closed:     false,
-		cancel:     cancelFunc,
-	}
-
-	go client.forwardData()
-
-	return client, nil
 }
 
 type BISTStockLiveData struct {
@@ -139,20 +250,72 @@ type BISTStockLiveData struct {
 	Date               int64   `json:"d"`
 }
 
-// GetLivePriceForBIST streams real-time price data for BIST (Turkish) stock symbols via Server-Sent Events.
-// Sending no symbols means all BIST stocks will be streamed.
-func (c *Client) GetLivePriceForBIST(ctx context.Context, symbols []string) (LivePriceClient[BISTStockLiveData], error) {
-	return GetLivePrice[BISTStockLiveData](c, ctx, symbols, RegionTr)
-}
-
 type USStockLiveData struct {
 	Symbol string  `json:"s"`
 	Price  float64 `json:"p"`
 	Date   int64   `json:"d"`
 }
 
-// GetLivePriceForUS streams real-time price data for US stock symbols via Server-Sent Events.
-// Sending no symbols means all US stocks will be streamed.
-func (c *Client) GetLivePriceForUS(ctx context.Context, symbols []string) (LivePriceClient[USStockLiveData], error) {
-	return GetLivePrice[USStockLiveData](c, ctx, symbols, RegionUs)
+// ===== NEW UNIFIED STREAMING API =====
+
+// GetLivePriceStreamForBIST creates a new live price stream for BIST stocks
+func (c *Client) GetLivePriceStreamForBIST(symbols []string) *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
+	stream := NewLivePriceStream[LiveMessageV2[BISTStockLiveData]](c, LivePriceTypePrice, RegionTr)
+	return stream
+}
+
+// GetLivePriceStreamForUS creates a new live price stream for US stocks
+func (c *Client) GetLivePriceStreamForUS(symbols []string) *LivePriceStream[USStockLiveData] {
+	stream := NewLivePriceStream[USStockLiveData](c, LivePriceTypePrice, RegionUs)
+	return stream
+}
+
+// GetLiveOrderBookStreamForBIST creates a new order book stream for BIST stocks
+func (c *Client) GetLiveOrderBookStreamForBIST(symbols []string) *LivePriceStream[BISTStockOrderBookData] {
+	stream := NewLivePriceStream[BISTStockOrderBookData](c, LivePriceTypeOrderBook, RegionTr)
+	return stream
+}
+
+// GetDelayedPriceStreamForBIST creates a new delayed price stream for BIST stocks
+func (c *Client) GetDelayedPriceStreamForBIST(symbols []string) *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
+	stream := NewLivePriceStream[LiveMessageV2[BISTStockLiveData]](c, LivePriceTypeDelayedPrice, RegionTr)
+	return stream
+}
+
+// ===== CONVENIENCE METHODS (Python-style API) =====
+
+// CreateLivePriceStreamForBIST creates and subscribes to live price stream for BIST
+func (c *Client) CreateLivePriceStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[BISTStockLiveData]], error) {
+	stream := c.GetLivePriceStreamForBIST(symbols)
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
+	}
+	return stream, nil
+}
+
+// CreateLivePriceStreamForUS creates and subscribes to live price stream for US stocks
+func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[USStockLiveData], error) {
+	stream := c.GetLivePriceStreamForUS(symbols)
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
+	}
+	return stream, nil
+}
+
+// CreateLiveOrderBookStreamForBIST creates and subscribes to order book stream for BIST
+func (c *Client) CreateLiveOrderBookStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[BISTStockOrderBookData], error) {
+	stream := c.GetLiveOrderBookStreamForBIST(symbols)
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to order book stream: %w", err)
+	}
+	return stream, nil
+}
+
+// CreateDelayedPriceStreamForBIST creates and subscribes to delayed price stream for BIST
+func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[BISTStockLiveData]], error) {
+	stream := c.GetDelayedPriceStreamForBIST(symbols)
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to delayed price stream: %w", err)
+	}
+	return stream, nil
 }

@@ -185,13 +185,13 @@ func TestReadme(t *testing.T) {
 	// Test Live Price Client methods
 	t.Run("Live Price Client", func(t *testing.T) {
 		// Get live prices for BIST stocks
-		_, err := client.GetLivePriceForBIST(ctx, []string{"THYAO", "GARAN"})
+		_, err := client.CreateLivePriceStreamForBIST(ctx, []string{"THYAO", "GARAN"})
 		if err != nil {
 			t.Errorf("GetLivePriceForBIST failed: %v", err)
 		}
 
 		// Get live prices for US stocks
-		_, err = client.GetLivePriceForUS(ctx, []string{"AAPL", "GOOGL"})
+		_, err = client.CreateLivePriceStreamForUS(ctx, []string{"AAPL", "GOOGL"})
 		if err != nil {
 			t.Errorf("GetLivePriceForUS failed: %v", err)
 		}

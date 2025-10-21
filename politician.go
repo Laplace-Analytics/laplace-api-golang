@@ -58,12 +58,12 @@ func (c *Client) GetAllPoliticians(ctx context.Context) ([]Politician, error) {
 		return nil, err
 	}
 
-	resp, err := sendRequest[[]Politician](ctx, c, req)
+	res, err := sendRequest[[]Politician](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return res, nil
 }
 
 func (c *Client) GetPoliticianHoldingsBySymbol(ctx context.Context, symbol string) ([]Holding, error) {
@@ -73,12 +73,12 @@ func (c *Client) GetPoliticianHoldingsBySymbol(ctx context.Context, symbol strin
 		return nil, err
 	}
 
-	resp, err := sendRequest[[]Holding](ctx, c, req)
+	res, err := sendRequest[[]Holding](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return res, nil
 }
 
 func (c *Client) GetAllTopHoldings(ctx context.Context) ([]TopHolding, error) {
@@ -88,12 +88,12 @@ func (c *Client) GetAllTopHoldings(ctx context.Context) ([]TopHolding, error) {
 		return nil, err
 	}
 
-	resp, err := sendRequest[[]TopHolding](ctx, c, req)
+	res, err := sendRequest[[]TopHolding](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return res, nil
 }
 
 func (c *Client) GetPoliticianDetail(ctx context.Context, id int) (PoliticianDetail, error) {
@@ -103,10 +103,10 @@ func (c *Client) GetPoliticianDetail(ctx context.Context, id int) (PoliticianDet
 		return PoliticianDetail{}, err
 	}
 
-	resp, err := sendRequest[PoliticianDetail](ctx, c, req)
+	res, err := sendRequest[PoliticianDetail](ctx, c, req)
 	if err != nil {
 		return PoliticianDetail{}, err
 	}
 
-	return resp, nil
+	return res, nil
 }

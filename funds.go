@@ -60,6 +60,7 @@ const (
 	HistoricalFundPricePeriodOneMonth   HistoricalFundPricePeriod = "1A"
 	HistoricalFundPricePeriodThreeMonth HistoricalFundPricePeriod = "3A"
 	HistoricalFundPricePeriodOneYear    HistoricalFundPricePeriod = "1Y"
+	HistoricalFundPricePeriodTwoYear    HistoricalFundPricePeriod = "2Y"
 	HistoricalFundPricePeriodThreeYear  HistoricalFundPricePeriod = "3Y"
 	HistoricalFundPricePeriodFiveYear   HistoricalFundPricePeriod = "5Y"
 )
