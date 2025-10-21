@@ -319,3 +319,50 @@ func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []
 	}
 	return stream, nil
 }
+
+type BISTBidAskResponse struct {
+	Data BISTBidAskLiveData `json:"d"`
+	Type string             `json:"t"`
+}
+
+type BISTBidAskLiveData struct {
+	Symbol string  `json:"s"`
+	Ask    float64 `json:"ask"`
+	Bid    float64 `json:"bid"`
+	Date   int64   `json:"d"`
+}
+
+// GetLiveBidAskForBIST streams real-time bid/ask price data for BIST (Turkish) stock symbols via Server-Sent Events.
+// Sending no symbols means all BIST stocks will be streamed.
+func (c *Client) GetLiveBidAskForBIST(ctx context.Context, symbols []string) (LivePriceClient[BISTBidAskResponse], error) {
+	if c == nil {
+		return nil, fmt.Errorf("client cannot be nil")
+	}
+	if ctx == nil {
+		return nil, fmt.Errorf("context cannot be nil")
+	}
+
+	streamID := uuid.New().String()
+	url := fmt.Sprintf("%s/api/v1/stock/price/bids?filter=%s&region=%s&stream=%s",
+		c.baseUrl, strings.Join(symbols, ","), string(RegionTr), streamID)
+
+	channel, cancelFunc, err := sendSSERequest[BISTBidAskResponse](ctx, c, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to establish SSE connection: %w", err)
+	}
+
+	client := &livePriceClient[BISTBidAskResponse]{
+		ctx:        ctx,
+		sseChan:    channel,
+		c:          c,
+		region:     RegionTr,
+		symbols:    symbols,
+		outputChan: make(chan LivePriceResult[BISTBidAskResponse]),
+		closed:     false,
+		cancel:     cancelFunc,
+	}
+
+	go client.forwardData()
+
+	return client, nil
+}
