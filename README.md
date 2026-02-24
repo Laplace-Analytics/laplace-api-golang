@@ -214,19 +214,7 @@ results, err := client.Search(ctx, "technology", []laplace.SearchType{laplace.Se
 
 ```go
 // Get WebSocket URL for real-time data
-url, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR}, laplace.RegionTr)
-
-// Update user details
-err = client.UpdateUserDetails(ctx, laplace.UpdateUserDetailsParams{
-	ExternalUserID: "user-id",
-	FirstName:      "John",
-	LastName:       "Doe",
-	Address:        "123 Main St",
-	City:           "New York",
-	CountryCode:    "US",
-	AccessorType:   laplace.AccessorTypeUser,
-	Active:         true,
-})
+url, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR})
 ```
 
 ### Capital Increase Client
