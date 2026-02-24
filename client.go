@@ -96,6 +96,40 @@ func sendRequest[T any](
 	return resp, nil
 }
 
+func sendRawRequest(
+	ctx context.Context,
+	c *Client,
+	r *http.Request,
+) ([]byte, error) {
+	r.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	res, err := c.cli.Do(r.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		var msg LaplaceHTTPErrorMsg
+		if err := json.Unmarshal(body, &msg); err != nil {
+			return nil, err
+		}
+
+		return nil, getLaplaceError(&LaplaceHTTPError{
+			HTTPStatus: res.StatusCode,
+			Message:    msg,
+		})
+	}
+
+	return body, nil
+}
+
 type LivePriceResult[T any] struct {
 	Data  T
 	Error error

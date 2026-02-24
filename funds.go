@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type FundType string
@@ -59,9 +60,8 @@ const (
 	HistoricalFundPricePeriodOneWeek    HistoricalFundPricePeriod = "1H"
 	HistoricalFundPricePeriodOneMonth   HistoricalFundPricePeriod = "1A"
 	HistoricalFundPricePeriodThreeMonth HistoricalFundPricePeriod = "3A"
-	HistoricalFundPricePeriodOneYear    HistoricalFundPricePeriod = "1Y"
-	HistoricalFundPricePeriodTwoYear    HistoricalFundPricePeriod = "2Y"
-	HistoricalFundPricePeriodThreeYear  HistoricalFundPricePeriod = "3Y"
+	HistoricalFundPricePeriodOneYear   HistoricalFundPricePeriod = "1Y"
+	HistoricalFundPricePeriodThreeYear HistoricalFundPricePeriod = "3Y"
 	HistoricalFundPricePeriodFiveYear   HistoricalFundPricePeriod = "5Y"
 )
 
@@ -107,11 +107,11 @@ type FundDistributionCategory struct {
 }
 
 type FundHistoricalPrice struct {
-	Aum           float64 `json:"aum"`
-	Date          string  `json:"date"`
-	Price         float64 `json:"price"`
-	ShareCount    float64 `json:"shareCount"`
-	InvestorCount int     `json:"investorCount"`
+	Aum           float64   `json:"aum"`
+	Date          time.Time `json:"date"`
+	Price         float64   `json:"price"`
+	ShareCount    float64   `json:"shareCount"`
+	InvestorCount int       `json:"investorCount"`
 }
 
 // GetFunds retrieves a paginated list of investment funds for the specified region with basic fund information.

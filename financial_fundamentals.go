@@ -11,6 +11,7 @@ import (
 
 type StockDividend struct {
 	Date           time.Time `json:"date"`
+	Currency       Currency  `json:"currency"`
 	NetAmount      float64   `json:"netAmount"`
 	NetRatio       float64   `json:"netRatio"`
 	GrossAmount    float64   `json:"grossAmount"`

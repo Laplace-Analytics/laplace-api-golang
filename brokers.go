@@ -27,11 +27,12 @@ const (
 )
 
 type Broker struct {
-	ID       int    `json:"id"`
-	Symbol   string `json:"symbol"`
-	Name     string `json:"name"`
-	LongName string `json:"longName"`
-	Logo     string `json:"logo"`
+	ID                    int          `json:"id"`
+	Symbol                string       `json:"symbol"`
+	Name                  string       `json:"name"`
+	LongName              string       `json:"longName"`
+	Logo                  string       `json:"logo"`
+	SupportedAssetClasses []AssetClass `json:"supportedAssetClasses,omitempty"`
 }
 
 type BrokerStock struct {
@@ -67,7 +68,7 @@ type BrokerResponseItem struct {
 }
 
 // GetBrokers retrieves a paginated list of brokers for the specified region.
-func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) (PaginatedResponse[*Broker], error) {
+func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int, assetClass ...AssetClass) (PaginatedResponse[*Broker], error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers", c.baseUrl), nil)
 	if err != nil {
 		return PaginatedResponse[*Broker]{}, err
@@ -77,6 +78,9 @@ func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) 
 	q.Add("region", string(region))
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(size))
+	if len(assetClass) > 0 {
+		q.Add("assetClass", string(assetClass[0]))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[PaginatedResponse[*Broker]](ctx, c, req)

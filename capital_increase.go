@@ -33,7 +33,7 @@ type CapitalIncrease struct {
 	RightsTotalAmount             string     `json:"rightsTotalAmount"`
 	RightsStartDate               *time.Time `json:"rightsStartDate"`
 	RightsEndDate                 *time.Time `json:"rightsEndDate"`
-	RightsLastSellDate            *string    `json:"rightsLastSellDate"`
+	RightsLastSellDate            *time.Time `json:"rightsLastSellDate"`
 	BonusRate                     string     `json:"bonusRate"`
 	BonusTotalAmount              string     `json:"bonusTotalAmount"`
 	BonusStartDate                *time.Time `json:"bonusStartDate"`

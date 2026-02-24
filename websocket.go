@@ -18,11 +18,14 @@ const (
 type FeedType string
 
 const (
-	FeedTypeLivePriceTR    FeedType = "live_price_tr"
-	FeedTypeDelayedPriceTR FeedType = "delayed_price_tr"
-	FeedTypeLivePriceUS    FeedType = "live_price_us"
-	FeedTypeDelayedPriceUS FeedType = "delayed_price_us"
-	FeedTypeDepthTR        FeedType = "depth_tr"
+	FeedTypeLivePriceTR       FeedType = "live_price_tr"
+	FeedTypeDelayedPriceTR    FeedType = "delayed_price_tr"
+	FeedTypeLivePriceUS       FeedType = "live_price_us"
+	FeedTypeDelayedPriceUS    FeedType = "delayed_price_us"
+	FeedTypeDepthTR           FeedType = "depth_tr"
+	FeedTypeStateUS           FeedType = "state_us"
+	FeedTypeLiveAskBidPriceTR FeedType = "live_ask_bid_price_tr"
+	FeedTypeCustom            FeedType = "custom"
 )
 
 type WebSocketUrlParams struct {
@@ -37,25 +40,8 @@ type WebSocketUrlResponse struct {
 	ExampleBody any         `json:"exampleBody,omitempty"`
 }
 
-type AccessorType string
-
-const (
-	AccessorTypeUser AccessorType = "user"
-)
-
-type UpdateUserDetailsParams struct {
-	ExternalUserID string       `json:"externalUserID"`
-	FirstName      string       `json:"firstName"`
-	LastName       string       `json:"lastName"`
-	Address        string       `json:"address"`
-	City           string       `json:"city"`
-	CountryCode    string       `json:"countryCode"`
-	AccessorType   AccessorType `json:"accessorType"`
-	Active         bool         `json:"active"`
-}
-
 // GetWebSocketUrl generates a WebSocket URL for accessing real-time market data feeds including live prices and depth data.
-func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, feeds []FeedType, region Region) (string, error) {
+func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, feeds []FeedType) (string, error) {
 	params := WebSocketUrlParams{
 		ExternalUserId: externalUserId,
 		Feeds:          feeds,
@@ -73,10 +59,6 @@ func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, fee
 
 	req.Header.Set("Content-Type", "application/json")
 
-	q := req.URL.Query()
-	q.Add("region", string(region))
-	req.URL.RawQuery = q.Encode()
-
 	resp, err := sendRequest[WebSocketUrlResponse](ctx, c, req)
 	if err != nil {
 		return "", err
@@ -85,24 +67,3 @@ func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, fee
 	return resp.URL, nil
 }
 
-// UpdateUserDetails updates user profile information required for WebSocket access and data feeds.
-func (c *Client) UpdateUserDetails(ctx context.Context, params UpdateUserDetailsParams) error {
-	jsonData, err := json.Marshal(params)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/v1/ws/user", c.baseUrl), bytes.NewBuffer(jsonData))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	_, err = sendRequest[any](ctx, c, req)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

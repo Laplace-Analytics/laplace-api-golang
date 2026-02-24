@@ -1,10 +1,14 @@
 package laplace
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -16,6 +20,7 @@ const (
 	LivePriceTypePrice        LivePriceType = "price"
 	LivePriceTypeDelayedPrice LivePriceType = "delayed-price"
 	LivePriceTypeOrderBook    LivePriceType = "order-book"
+	LivePriceTypeBidAsk       LivePriceType = "bid-ask"
 )
 
 // MessageType represents the type of message in live data streams
@@ -45,10 +50,11 @@ const (
 
 // OrderbookLevel represents a single level in the orderbook
 type OrderbookLevel struct {
-	ID    int       `json:"level"`
-	Side  LevelSide `json:"side"`
-	Price float64   `json:"price"`
-	Size  float64   `json:"size"`
+	ID     int       `json:"level"`
+	Side   LevelSide `json:"side"`
+	Volume float64   `json:"vol"`
+	Orders int       `json:"orders"`
+	Price  float64   `json:"p"`
 }
 
 // OrderbookDeletedLevel represents a deleted level in the orderbook
@@ -62,12 +68,6 @@ type BISTStockOrderBookData struct {
 	Updated []OrderbookLevel        `json:"updated"`
 	Deleted []OrderbookDeletedLevel `json:"deleted"`
 	Symbol  string                  `json:"s"`
-}
-
-type LivePriceClient[T any] interface {
-	Close() error
-	Receive() <-chan LivePriceResult[T]
-	Subscribe(ctx context.Context, symbols []string) error
 }
 
 // LivePriceStream handles live price streaming for a specific region and type
@@ -182,6 +182,8 @@ func (s *LivePriceStream[T]) buildStreamURL() string {
 		endpoint = "/api/v1/stock/price/delayed"
 	case s.priceType == LivePriceTypeOrderBook:
 		endpoint = "/api/v1/stock/orderbook/live"
+	case s.priceType == LivePriceTypeBidAsk:
+		endpoint = "/api/v1/stock/price/bids"
 	default:
 		endpoint = "/api/v2/stock/price/live"
 	}
@@ -251,9 +253,11 @@ type BISTStockLiveData struct {
 }
 
 type USStockLiveData struct {
-	Symbol string  `json:"s"`
-	Price  float64 `json:"p"`
-	Date   int64   `json:"d"`
+	Symbol        string  `json:"s"`
+	Price         float64 `json:"p"`
+	Date          int64   `json:"d"`
+	PercentChange float64 `json:"pc"`
+	AmountChange  float64 `json:"ac"`
 }
 
 // ===== NEW UNIFIED STREAMING API =====
@@ -332,37 +336,74 @@ type BISTBidAskLiveData struct {
 	Date   int64   `json:"d"`
 }
 
-// GetLiveBidAskForBIST streams real-time bid/ask price data for BIST (Turkish) stock symbols via Server-Sent Events.
+// GetLiveBidAskStreamForBIST creates a new bid/ask price stream for BIST stocks.
 // Sending no symbols means all BIST stocks will be streamed.
-func (c *Client) GetLiveBidAskForBIST(ctx context.Context, symbols []string) (LivePriceClient[BISTBidAskResponse], error) {
-	if c == nil {
-		return nil, fmt.Errorf("client cannot be nil")
-	}
-	if ctx == nil {
-		return nil, fmt.Errorf("context cannot be nil")
-	}
+func (c *Client) GetLiveBidAskStreamForBIST(symbols []string) *LivePriceStream[BISTBidAskResponse] {
+	stream := NewLivePriceStream[BISTBidAskResponse](c, LivePriceTypeBidAsk, RegionTr)
+	return stream
+}
 
-	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v1/stock/price/bids?filter=%s&region=%s&stream=%s",
-		c.baseUrl, strings.Join(symbols, ","), string(RegionTr), streamID)
+// CreateLiveBidAskStreamForBIST creates and subscribes to bid/ask price stream for BIST.
+func (c *Client) CreateLiveBidAskStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[BISTBidAskResponse], error) {
+	stream := c.GetLiveBidAskStreamForBIST(symbols)
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to bid/ask stream: %w", err)
+	}
+	return stream, nil
+}
 
-	channel, cancelFunc, err := sendSSERequest[BISTBidAskResponse](ctx, c, url)
+type WebSocketMonthlyUsageData struct {
+	ExternalUserID      string    `json:"externalUserID"`
+	FirstConnectionTime time.Time `json:"firstConnectionTime"`
+	UniqueDeviceCount   int64     `json:"uniqueDeviceCount"`
+}
+
+// GetWebsocketUsageForMonth retrieves WebSocket usage statistics for a specific month.
+func (c *Client) GetWebsocketUsageForMonth(ctx context.Context, month string, year string, feedType FeedType) ([]WebSocketMonthlyUsageData, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/ws/report", c.baseUrl), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to establish SSE connection: %w", err)
+		return nil, err
 	}
 
-	client := &livePriceClient[BISTBidAskResponse]{
-		ctx:        ctx,
-		sseChan:    channel,
-		c:          c,
-		region:     RegionTr,
-		symbols:    symbols,
-		outputChan: make(chan LivePriceResult[BISTBidAskResponse]),
-		closed:     false,
-		cancel:     cancelFunc,
+	q := req.URL.Query()
+	q.Add("month", month)
+	q.Add("year", year)
+	q.Add("feedType", string(feedType))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]WebSocketMonthlyUsageData](ctx, c, req)
+	if err != nil {
+		return nil, err
 	}
 
-	go client.forwardData()
+	return resp, nil
+}
 
-	return client, nil
+type SendWebsocketEventRequest struct {
+	ExternalUserID string          `json:"externalUserID,omitempty"`
+	Event          json.RawMessage `json:"event"`
+	Transient      *bool           `json:"transient,omitempty"`
+	BroadCastToAll bool            `json:"broadCastToAll"`
+}
+
+// SendWebsocketEvent sends a custom event through the WebSocket connection.
+func (c *Client) SendWebsocketEvent(ctx context.Context, params SendWebsocketEventRequest) error {
+	jsonData, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/ws/event", c.baseUrl), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	_, err = sendRequest[any](ctx, c, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

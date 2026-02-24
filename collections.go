@@ -28,6 +28,7 @@ type Collection struct {
 	ID          primitive.ObjectID `json:"id"`
 	Title       string             `json:"title"`
 	Region      []Region           `json:"region"`
+	Locale      Locale             `json:"locale,omitempty"`
 	ImageUrl    string             `json:"imageUrl"`
 	AvatarUrl   string             `json:"avatarUrl"`
 	NumStocks   int                `json:"numStocks"`

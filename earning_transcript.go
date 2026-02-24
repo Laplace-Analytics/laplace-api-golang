@@ -2,28 +2,28 @@ package laplace
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type EarningsTranscriptWithSummary struct {
-	Symbol     string    `json:"symbol"`
-	Year       int       `json:"year"`
-	Quarter    int       `json:"quarter"`
-	Date       time.Time `json:"date"`
-	Content    string    `json:"content"`
-	Summary    string    `json:"summary,omitempty"`
-	HasSummary bool      `json:"has_summary"`
+	Symbol     string          `json:"symbol"`
+	Year       int             `json:"year"`
+	Quarter    int             `json:"quarter"`
+	Date       json.RawMessage `json:"date"`
+	Content    string          `json:"content"`
+	Summary    string          `json:"summary,omitempty"`
+	HasSummary bool            `json:"has_summary"`
 }
 
 type EarningsTranscriptListItem struct {
-	Symbol     string    `json:"symbol"`
-	Year       int       `json:"year"`
-	Quarter    int       `json:"quarter"`
-	Date       time.Time `json:"date"`
-	FiscalYear int       `json:"fiscal_year"`
+	Symbol     string          `json:"symbol"`
+	Year       int             `json:"year"`
+	Quarter    int             `json:"quarter"`
+	Date       json.RawMessage `json:"date"`
+	FiscalYear int             `json:"fiscal_year"`
 }
 
 func (c *Client) GetEarningsTranscriptWithSummary(ctx context.Context, symbol string, year, quarter int) (*EarningsTranscriptWithSummary, error) {
