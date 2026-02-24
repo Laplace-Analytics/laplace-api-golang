@@ -35,10 +35,12 @@ func (s *CapitalIncreaseTestSuite) TestGetAllCapitalIncreases() {
 	s.Require().Equal("TRY", item.SpecifiedCurrency)
 	s.Require().NotEmpty(item.CurrentCapital)
 	s.Require().NotEmpty(item.TargetCapital)
+	s.Require().NotEmpty(item.RegisteredCapitalCeiling)
 	s.Require().NotNil(item.BoardDecisionDate)
 	s.Require().NotEmpty(item.BoardDecisionDate)
 	s.Require().NotEmpty(item.Types)
 	s.Require().Contains([]string{"bonus", "rights", "external", "bonus_dividend"}, item.Types[0])
+	s.Require().NotNil(item.RelatedDisclosureIDs)
 }
 
 func (s *CapitalIncreaseTestSuite) TestGetCapitalIncreasesForInstrument() {
@@ -76,4 +78,12 @@ func (s *CapitalIncreaseTestSuite) TestGetActiveRightsForInstrument() {
 	resp, err := client.GetActiveRightsForInstrument(ctx, "SASA", "2024-07-20", RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
+
+	for _, item := range resp {
+		s.Require().NotZero(item.ID)
+		s.Require().NotEmpty(item.Symbol)
+		s.Require().NotEmpty(item.SpecifiedCurrency)
+		s.Require().NotEmpty(item.CurrentCapital)
+		s.Require().NotEmpty(item.TargetCapital)
+	}
 }

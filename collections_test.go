@@ -30,6 +30,8 @@ func (s *CollectionsTestSuite) TestGetAllCollections() {
 	for _, collection := range resp {
 		s.Require().NotEmpty(collection.ID)
 		s.Require().NotEmpty(collection.Title)
+		s.Require().NotEmpty(collection.ImageUrl)
+		s.Require().NotEmpty(collection.AvatarUrl)
 		if collection.NumStocks > 0 {
 			hasStocks = true
 		}
@@ -66,5 +68,6 @@ func (s *CollectionsTestSuite) TestGetCollectionDetail() {
 		s.Require().NotEmpty(stock.SectorId)
 		s.Require().NotEmpty(stock.IndustryId)
 		s.Require().NotEmpty(stock.AssetType)
+		s.Require().NotEmpty(stock.UpdatedDate)
 	}
 }

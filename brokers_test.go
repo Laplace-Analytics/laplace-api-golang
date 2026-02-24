@@ -38,12 +38,35 @@ func (s *BrokerTestSuite) TestGetBrokers() {
 	}
 }
 
+func (s *BrokerTestSuite) TestGetBrokersWithAssetClass() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetBrokers(ctx, RegionTr, 0, 10, AssetClassEquity)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+
+	s.Require().Greater(resp.RecordCount, 0)
+	s.Require().NotEmpty(resp.Items)
+
+	if len(resp.Items) > 0 {
+		broker := resp.Items[0]
+		s.Require().NotEmpty(broker.Symbol)
+		s.Require().NotEmpty(broker.Name)
+		s.Require().Greater(broker.ID, 0)
+		s.Require().NotEmpty(broker.LongName)
+		s.Require().NotNil(broker.SupportedAssetClasses)
+		s.Require().Contains(broker.SupportedAssetClasses, AssetClassEquity)
+	}
+}
+
 func (s *BrokerTestSuite) TestGetMarketBrokers() {
 	client := newTestClient(s.Config)
 
 	ctx := context.Background()
 
-	resp, err := client.GetMarketBrokers(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-01-28", "2025-05-28", 0, 5)
+	resp, err := client.GetMarketBrokers(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -56,6 +79,7 @@ func (s *BrokerTestSuite) TestGetMarketBrokers() {
 	s.Require().Greater(resp.TotalStats.TotalBuyAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalSellAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalAmount, 0.0)
+	s.Require().NotZero(resp.TotalStats.NetAmount)
 
 	if len(resp.Items) > 0 {
 		item := resp.Items[0]
@@ -65,7 +89,8 @@ func (s *BrokerTestSuite) TestGetMarketBrokers() {
 		s.Require().Greater(item.TotalBuyAmount, 0.0)
 		s.Require().Greater(item.TotalSellAmount, 0.0)
 		s.Require().Greater(item.TotalAmount, 0.0)
-		
+		s.Require().NotZero(item.NetAmount)
+
 		s.Require().NotEmpty(item.Broker.Symbol)
 		s.Require().NotEmpty(item.Broker.Name)
 		s.Require().Greater(item.Broker.ID, 0)
@@ -78,7 +103,7 @@ func (s *BrokerTestSuite) TestGetMarketStocks() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetMarketStocks(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-01-28", "2025-05-28", 0, 5)
+	resp, err := client.GetMarketStocks(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -91,6 +116,7 @@ func (s *BrokerTestSuite) TestGetMarketStocks() {
 	s.Require().Greater(resp.TotalStats.TotalBuyAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalSellAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalAmount, 0.0)
+	s.Require().NotZero(resp.TotalStats.NetAmount)
 	s.Require().Greater(resp.TotalStats.AverageCost, 0.0)
 
 	if len(resp.Items) > 0 {
@@ -101,6 +127,7 @@ func (s *BrokerTestSuite) TestGetMarketStocks() {
 		s.Require().Greater(item.TotalBuyAmount, 0.0)
 		s.Require().Greater(item.TotalSellAmount, 0.0)
 		s.Require().Greater(item.TotalAmount, 0.0)
+		s.Require().NotZero(item.NetAmount)
 		s.Require().Greater(item.AverageCost, 0.0)
 		if item.Stock != nil {
 			s.Require().NotEmpty(item.Stock.Symbol)
@@ -117,7 +144,7 @@ func (s *BrokerTestSuite) TestGetBrokersByStock() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetBrokersByStock(ctx, "SASA", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-01-28", "2025-05-28", 0, 5)
+	resp, err := client.GetBrokersByStock(ctx, "SASA", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -130,6 +157,7 @@ func (s *BrokerTestSuite) TestGetBrokersByStock() {
 	s.Require().Greater(resp.TotalStats.TotalBuyAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalSellAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalAmount, 0.0)
+	s.Require().NotZero(resp.TotalStats.NetAmount)
 	s.Require().Greater(resp.TotalStats.AverageCost, 0.0)
 
 	if len(resp.Items) > 0 {
@@ -140,6 +168,7 @@ func (s *BrokerTestSuite) TestGetBrokersByStock() {
 		s.Require().Greater(item.TotalBuyAmount, 0.0)
 		s.Require().Greater(item.TotalSellAmount, 0.0)
 		s.Require().Greater(item.TotalAmount, 0.0)
+		s.Require().NotZero(item.NetAmount)
 		s.Require().Greater(item.AverageCost, 0.0)
 
 		s.Require().NotEmpty(item.Broker.Symbol)
@@ -154,7 +183,7 @@ func (s *BrokerTestSuite) TestGetStocksByBroker() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetStocksByBroker(ctx, "BIYKR", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-01-28", "2025-05-28", 0, 5)
+	resp, err := client.GetStocksByBroker(ctx, "BIYKR", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -167,6 +196,7 @@ func (s *BrokerTestSuite) TestGetStocksByBroker() {
 	s.Require().Greater(resp.TotalStats.TotalBuyAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalSellAmount, 0.0)
 	s.Require().Greater(resp.TotalStats.TotalAmount, 0.0)
+	s.Require().NotZero(resp.TotalStats.NetAmount)
 
 	if len(resp.Items) > 0 {
 		item := resp.Items[0]
@@ -184,6 +214,7 @@ func (s *BrokerTestSuite) TestGetStocksByBroker() {
 		s.Require().Greater(item.TotalBuyAmount, 0.0)
 		s.Require().Greater(item.TotalSellAmount, 0.0)
 		s.Require().Greater(item.TotalAmount, 0.0)
+		s.Require().NotZero(item.NetAmount)
 	}
 }
 

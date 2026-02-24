@@ -230,25 +230,11 @@ func TestReadme(t *testing.T) {
 	// Test WebSocket Client methods
 	t.Run("WebSocket Client", func(t *testing.T) {
 		// Get WebSocket URL for real-time data
-		_, err := client.GetWebSocketUrl(ctx, "user-id", []FeedType{FeedTypeLivePriceTR}, RegionTr)
+		_, err := client.GetWebSocketUrl(ctx, "user-id", []FeedType{FeedTypeLivePriceTR})
 		if err != nil {
 			t.Errorf("GetWebSocketUrl failed: %v", err)
 		}
 
-		// Update user details
-		err = client.UpdateUserDetails(ctx, UpdateUserDetailsParams{
-			ExternalUserID: "user-id",
-			FirstName:      "John",
-			LastName:       "Doe",
-			Address:        "123 Main St",
-			City:           "New York",
-			CountryCode:    "US",
-			AccessorType:   AccessorTypeUser,
-			Active:         true,
-		})
-		if err != nil {
-			t.Errorf("UpdateUserDetails failed: %v", err)
-		}
 	})
 
 	// Test Capital Increase Client methods

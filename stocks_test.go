@@ -45,8 +45,8 @@ func (s *StocksTestSuite) TestGetAllStocks() {
 	s.Require().NotEmpty(stock.Symbol)
 	s.Require().NotEmpty(stock.Name)
 	s.Require().Contains(getAllAssetTypes(), stock.AssetType)
-	s.Require().NotEqual(primitive.NilObjectID, stock.SectorId)
-	s.Require().NotEqual(primitive.NilObjectID, stock.IndustryId)
+	s.Require().NotEmpty(stock.SectorId)
+	s.Require().NotEmpty(stock.IndustryId)
 	s.Require().NotEmpty(stock.UpdatedDate)
 }
 
@@ -82,9 +82,13 @@ func (s *StocksTestSuite) TestGetStockDetailByID() {
 	s.Require().Equal(string(RegionTr), resp.Region)
 	s.Require().Equal(AssetClassEquity, resp.AssetClass)
 	s.Require().Contains(string(AssetTypeStock), resp.AssetType)
-	s.Require().NotEqual(primitive.NilObjectID, resp.SectorId)
-	s.Require().NotEqual(primitive.NilObjectID, resp.IndustryId)
+	s.Require().NotEmpty(resp.SectorId)
+	s.Require().NotEmpty(resp.IndustryId)
 	s.Require().Equal(true, resp.Active)
+	s.Require().NotEmpty(resp.Description)
+	s.Require().NotEmpty(resp.ShortDescription)
+	s.Require().NotNil(resp.LocalizedDescription)
+	s.Require().NotNil(resp.LocalizedShortDescription)
 }
 
 func (s *StocksTestSuite) TestGetStockDetailBySymbol() {
@@ -101,9 +105,13 @@ func (s *StocksTestSuite) TestGetStockDetailBySymbol() {
 	s.Require().Equal(string(RegionTr), resp.Region)
 	s.Require().Equal(AssetClassEquity, resp.AssetClass)
 	s.Require().Contains(string(AssetTypeStock), resp.AssetType)
-	s.Require().NotEqual(primitive.NilObjectID, resp.SectorId)
-	s.Require().NotEqual(primitive.NilObjectID, resp.IndustryId)
+	s.Require().NotEmpty(resp.SectorId)
+	s.Require().NotEmpty(resp.IndustryId)
 	s.Require().Equal(true, resp.Active)
+	s.Require().NotEmpty(resp.Description)
+	s.Require().NotEmpty(resp.ShortDescription)
+	s.Require().NotNil(resp.LocalizedDescription)
+	s.Require().NotNil(resp.LocalizedShortDescription)
 }
 
 func (s *StocksTestSuite) TestGetHistoricalPrices() {
@@ -161,9 +169,7 @@ func (s *StocksTestSuite) TestGetStockRestrictions() {
 	for _, restriction := range resp {
 		s.Require().Greater(restriction.ID, 0)
 		s.Require().NotEmpty(restriction.Title)
-		s.Require().NotEmpty(restriction.Market)
-		s.Require().NotEmpty(restriction.StartDate)
-		s.Require().NotEmpty(restriction.EndDate)
+		s.Require().NotEmpty(restriction.Description)
 	}
 }
 
@@ -172,10 +178,10 @@ func (s *StocksTestSuite) TestGetAllRestrictions() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetAllRestrictions(ctx, RegionTr)
+	resp, err := client.GetAllRestrictions(ctx)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
-	
+
 	for _, restriction := range resp {
 		s.Require().Greater(restriction.ID, 0)
 		s.Require().NotEmpty(restriction.Title)
@@ -190,5 +196,124 @@ func (s *StocksTestSuite) TestGetTickRules() {
 
 	resp, err := client.GetTickRules(ctx, "TUPRS", RegionTr)
 	s.Require().NoError(err)
+	s.Require().NotZero(resp.BasePrice)
+	s.Require().NotZero(resp.LowerPriceLimit)
+	s.Require().NotZero(resp.UpperPriceLimit)
+	s.Require().Greater(len(resp.Rules), 0)
+
+	rule := resp.Rules[0]
+	s.Require().GreaterOrEqual(rule.PriceFrom, 0.0)
+	s.Require().Greater(rule.PriceTo, 0.0)
+	s.Require().Greater(rule.TickSize, 0.0)
+}
+
+func (s *StocksTestSuite) TestGetStateOfAllMarkets() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStateOfAllMarkets(ctx, RegionTr, 0, 10)
+	s.Require().NoError(err)
 	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp.Items), 0)
+
+	state := resp.Items[0]
+	s.Require().Greater(state.ID, 0)
+	s.Require().NotEmpty(state.State)
+	s.Require().NotEmpty(state.LastTimestamp)
+}
+
+func (s *StocksTestSuite) TestGetStateOfAllStocks() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStateOfAllStocks(ctx, RegionTr, 0, 10)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp.Items), 0)
+}
+
+func (s *StocksTestSuite) TestGetStateForStock() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStateForStock(ctx, "TUPRS")
+	s.Require().NoError(err)
+	s.Require().Greater(resp.ID, 0)
+	s.Require().NotEmpty(resp.State)
+	s.Require().NotEmpty(resp.LastTimestamp)
+}
+
+func (s *StocksTestSuite) TestGetStateForMarket() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	allMarkets, err := client.GetStateOfAllMarkets(ctx, RegionTr, 0, 10)
+	s.Require().NoError(err)
+	s.Require().Greater(len(allMarkets.Items), 0)
+
+	marketSymbol := ""
+	for _, m := range allMarkets.Items {
+		if m.MarketSymbol != nil {
+			marketSymbol = *m.MarketSymbol
+			break
+		}
+	}
+	s.Require().NotEmpty(marketSymbol)
+
+	resp, err := client.GetStateForMarket(ctx, marketSymbol)
+	s.Require().NoError(err)
+	s.Require().Greater(resp.ID, 0)
+	s.Require().NotEmpty(resp.State)
+	s.Require().NotEmpty(resp.LastTimestamp)
+}
+
+func (s *StocksTestSuite) TestGetEarningsTranscriptList() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetEarningsTranscriptList(ctx, RegionUs, "AAPL")
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	transcript := resp[0]
+	s.Require().NotEmpty(transcript.Symbol)
+	s.Require().Greater(transcript.Year, 0)
+	s.Require().Greater(transcript.Quarter, 0)
+	s.Require().Greater(transcript.FiscalYear, 0)
+}
+
+func (s *StocksTestSuite) TestGetEarningsTranscriptWithSummary() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetEarningsTranscriptWithSummary(ctx, "AAPL", 2024, 1)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Equal("AAPL", resp.Symbol)
+	s.Require().Greater(resp.Year, 0)
+	s.Require().Greater(resp.Quarter, 0)
+	s.Require().NotEmpty(resp.Date)
+	s.Require().NotEmpty(resp.Content)
+	s.Require().IsType(false, resp.HasSummary)
+}
+
+func (s *StocksTestSuite) TestGetStockChartImage() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetStockChartImage(ctx, GenerateChartImageRequest{
+		Symbol: "TUPRS",
+		Region: RegionTr,
+	})
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
 }

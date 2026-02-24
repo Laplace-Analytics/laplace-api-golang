@@ -30,6 +30,8 @@ func (s *SectorTestSuite) TestGetAllSectors() {
 	for _, sector := range resp {
 		s.Require().NotEmpty(sector.ID)
 		s.Require().NotEmpty(sector.Title)
+		s.Require().IsType("", sector.ImageUrl)
+		s.Require().IsType("", sector.AvatarUrl)
 		if sector.NumStocks > 0 {
 			hasStocks = true
 		}
@@ -66,5 +68,6 @@ func (s *SectorTestSuite) TestGetSectorDetails() {
 		s.Require().NotEmpty(stock.SectorId)
 		s.Require().NotEmpty(stock.IndustryId)
 		s.Require().NotEmpty(stock.AssetType)
+		s.Require().NotEmpty(stock.UpdatedDate)
 	}
 }

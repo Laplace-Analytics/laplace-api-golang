@@ -50,6 +50,8 @@ func (s *SearchTestSuite) TestSearchIndustry() {
 	industry := resp.Industries[0]
 	s.Require().NotEqual(primitive.NilObjectID, industry.ID)
 	s.Require().NotEmpty(industry.Title)
+	s.Require().NotEmpty(industry.ImageUrl)
+	s.Require().NotEmpty(industry.AvatarUrl)
 
 	hasValidRegion := false
 	for _, region := range industry.Region {

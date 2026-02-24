@@ -29,9 +29,14 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockDividends() {
 
 	dividend := resp[0]
 	s.Require().NotEmpty(dividend.Date)
+	s.Require().NotEmpty(dividend.Currency)
+	s.Require().NotZero(dividend.NetAmount)
+	s.Require().NotZero(dividend.NetRatio)
 	s.Require().Greater(dividend.GrossAmount, 0.0)
 	s.Require().Greater(dividend.GrossRatio, 0.0)
 	s.Require().Greater(dividend.PriceThen, 0.0)
+	s.Require().NotZero(dividend.StoppageRatio)
+	s.Require().NotZero(dividend.StoppageAmount)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
@@ -47,11 +52,23 @@ func (s *FinancialFundamentalsTestSuite) TestGetStockStats() {
 	s.Require().Equal("TUPRS", currentStockStats.Symbol)
 	s.Require().Greater(currentStockStats.PreviousClose, 0.0)
 	s.Require().Greater(currentStockStats.MarketCap, 0.0)
+	s.Require().NotZero(currentStockStats.PeRatio)
+	s.Require().NotZero(currentStockStats.PbRatio)
 	s.Require().Greater(currentStockStats.YearLow, 0.0)
 	s.Require().Greater(currentStockStats.YearHigh, 0.0)
-	s.Require().NotEqual(currentStockStats.LowerPriceLimit, 0.0)
-	s.Require().NotEqual(currentStockStats.UpperPriceLimit, 0.0)
+	s.Require().Greater(currentStockStats.LatestPrice, 0.0)
+	s.Require().Greater(currentStockStats.DayHigh, 0.0)
+	s.Require().Greater(currentStockStats.DayLow, 0.0)
+	s.Require().NotEqual(currentStockStats.LowerPriceLimit, Price(0))
+	s.Require().NotEqual(currentStockStats.UpperPriceLimit, Price(0))
 	s.Require().NotEqual(currentStockStats.DayOpen, 0.0)
+	s.Require().NotZero(currentStockStats.WeeklyReturn)
+	s.Require().NotZero(currentStockStats.MonthlyReturn)
+	s.Require().NotZero(currentStockStats.ThreeMonthReturn)
+	s.Require().NotZero(currentStockStats.YtdReturn)
+	s.Require().NotZero(currentStockStats.YearlyReturn)
+	s.Require().NotZero(currentStockStats.DailyChange)
+	s.Require().NotZero(currentStockStats.Eps)
 }
 
 func (s *FinancialFundamentalsTestSuite) TestGetTopMovers() {

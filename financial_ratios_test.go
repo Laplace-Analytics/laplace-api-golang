@@ -29,10 +29,13 @@ func (s *FinancialRatiosTestSuite) TestGetFinancialRatioComparison() {
 
 	comparison := resp[0]
 	s.Require().NotEmpty(comparison.MetricName)
+	s.Require().NotZero(comparison.NormalizedValue)
 	s.Require().NotEmpty(comparison.Data)
 
 	data := comparison.Data[0]
 	s.Require().NotEmpty(data.Slug)
+	s.Require().NotZero(data.Value)
+	s.Require().NotZero(data.Average)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
@@ -51,9 +54,14 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatios() {
 	s.Require().NotEmpty(ratio.Name)
 	s.Require().NotEmpty(ratio.Format)
 	s.Require().NotEmpty(ratio.Currency)
+	s.Require().NotZero(ratio.FinalValue)
+	s.Require().NotZero(ratio.YearGrowth)
+	s.Require().NotZero(ratio.FinalSectorValue)
 
 	item := ratio.Items[0]
 	s.Require().NotEmpty(item.Period)
+	s.Require().NotZero(item.Value)
+	s.Require().NotZero(item.SectorMean)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
@@ -74,6 +82,9 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalRatiosDescriptions() {
 	s.Require().NotEmpty(desc.Format)
 	s.Require().NotEmpty(desc.Description)
 	s.Require().Equal(string(LocaleTr), desc.Locale)
+	s.Require().NotEmpty(desc.CreatedAt)
+	s.Require().NotEmpty(desc.UpdatedAt)
+	s.Require().IsType(false, desc.IsRealtime)
 }
 
 func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
@@ -99,4 +110,6 @@ func (s *FinancialRatiosTestSuite) TestGetHistoricalFinancialSheets() {
 
 	item := sheet.Items[0]
 	s.Require().NotEmpty(item.Description)
+	s.Require().NotZero(item.SheetLineItemId)
+	s.Require().GreaterOrEqual(item.Indent, 0)
 }
