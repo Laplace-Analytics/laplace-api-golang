@@ -252,7 +252,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get active rights for an instrument
-		_, err = client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15", RegionTr)
+		_, err = client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15")
 		if err != nil {
 			t.Errorf("GetActiveRightsForInstrument failed: %v", err)
 		}

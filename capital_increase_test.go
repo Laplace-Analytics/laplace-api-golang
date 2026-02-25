@@ -75,7 +75,7 @@ func (s *CapitalIncreaseTestSuite) TestGetActiveRightsForInstrument() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetActiveRightsForInstrument(ctx, "SASA", "2024-07-20", RegionTr)
+	resp, err := client.GetActiveRightsForInstrument(ctx, "SASA", "2024-07-20")
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
