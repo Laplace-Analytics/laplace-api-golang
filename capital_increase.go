@@ -33,7 +33,7 @@ type CapitalIncrease struct {
 	RightsTotalAmount             string     `json:"rightsTotalAmount"`
 	RightsStartDate               *time.Time `json:"rightsStartDate"`
 	RightsEndDate                 *time.Time `json:"rightsEndDate"`
-	RightsLastSellDate            *string    `json:"rightsLastSellDate"`
+	RightsLastSellDate            *time.Time `json:"rightsLastSellDate"`
 	BonusRate                     string     `json:"bonusRate"`
 	BonusTotalAmount              string     `json:"bonusTotalAmount"`
 	BonusStartDate                *time.Time `json:"bonusStartDate"`
@@ -86,7 +86,7 @@ func (c *Client) GetCapitalIncreasesForInstrument(ctx context.Context, symbol st
 }
 
 // GetActiveRightsForInstrument retrieves active rights offerings for a specific stock on a given date.
-func (c *Client) GetActiveRightsForInstrument(ctx context.Context, symbol string, date string, region Region) ([]CapitalIncrease, error) {
+func (c *Client) GetActiveRightsForInstrument(ctx context.Context, symbol string, date string) ([]CapitalIncrease, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/rights/active/%s", c.baseUrl, symbol), nil)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,6 @@ func (c *Client) GetActiveRightsForInstrument(ctx context.Context, symbol string
 
 	q := req.URL.Query()
 	q.Add("date", date)
-	q.Add("region", string(region))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]CapitalIncrease](ctx, c, req)

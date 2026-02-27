@@ -19,19 +19,14 @@ const (
 	BrokerSortTotalSellVolume BrokerSort = "totalSellVolume"
 )
 
-type BrokerSortDirection string
-
-const (
-	BrokerSortDirectionDesc BrokerSortDirection = "desc"
-	BrokerSortDirectionAsc  BrokerSortDirection = "asc"
-)
 
 type Broker struct {
-	ID       int    `json:"id"`
-	Symbol   string `json:"symbol"`
-	Name     string `json:"name"`
-	LongName string `json:"longName"`
-	Logo     string `json:"logo"`
+	ID                    int          `json:"id"`
+	Symbol                string       `json:"symbol"`
+	Name                  string       `json:"name"`
+	LongName              string       `json:"longName"`
+	Logo                  string       `json:"logo"`
+	SupportedAssetClasses []AssetClass `json:"supportedAssetClasses,omitempty"`
 }
 
 type BrokerStock struct {
@@ -67,7 +62,7 @@ type BrokerResponseItem struct {
 }
 
 // GetBrokers retrieves a paginated list of brokers for the specified region.
-func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) (PaginatedResponse[*Broker], error) {
+func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int, assetClass ...AssetClass) (PaginatedResponse[*Broker], error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers", c.baseUrl), nil)
 	if err != nil {
 		return PaginatedResponse[*Broker]{}, err
@@ -77,6 +72,9 @@ func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) 
 	q.Add("region", string(region))
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(size))
+	if len(assetClass) > 0 {
+		q.Add("assetClass", string(assetClass[0]))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[PaginatedResponse[*Broker]](ctx, c, req)
@@ -88,7 +86,7 @@ func (c *Client) GetBrokers(ctx context.Context, region Region, page, size int) 
 }
 
 // GetMarketStocks fetches market stocks with broker trading statistics, including buy/sell volumes and amounts with sorting options.
-func (c *Client) GetMarketStocks(ctx context.Context, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+func (c *Client) GetMarketStocks(ctx context.Context, region Region, sortBy BrokerSort, sortDirection SortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/market/stock", c.baseUrl), nil)
 	if err != nil {
 		return BrokerListResponse{}, err
@@ -113,7 +111,7 @@ func (c *Client) GetMarketStocks(ctx context.Context, region Region, sortBy Brok
 }
 
 // GetMarketBrokers fetches market brokers with trading statistics, including total volumes and amounts with sorting options.
-func (c *Client) GetMarketBrokers(ctx context.Context, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+func (c *Client) GetMarketBrokers(ctx context.Context, region Region, sortBy BrokerSort, sortDirection SortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/market", c.baseUrl), nil)
 	if err != nil {
 		return BrokerListResponse{}, err
@@ -138,14 +136,13 @@ func (c *Client) GetMarketBrokers(ctx context.Context, region Region, sortBy Bro
 }
 
 // GetBrokersByStock retrieves brokers that have traded a specific stock with their trading statistics and sorting options.
-func (c *Client) GetBrokersByStock(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+func (c *Client) GetBrokersByStock(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection SortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/%s", c.baseUrl, symbol), nil)
 	if err != nil {
 		return BrokerListResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add("symbol", symbol)
 	q.Add("region", string(region))
 	q.Add("sortBy", string(sortBy))
 	q.Add("sortDirection", string(sortDirection))
@@ -164,14 +161,13 @@ func (c *Client) GetBrokersByStock(ctx context.Context, symbol string, region Re
 }
 
 // GetStocksByBroker retrieves stocks that have been traded by a specific broker with trading statistics and sorting options.
-func (c *Client) GetStocksByBroker(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection BrokerSortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
+func (c *Client) GetStocksByBroker(ctx context.Context, symbol string, region Region, sortBy BrokerSort, sortDirection SortDirection, fromDate, toDate string, page, size int) (BrokerListResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/brokers/stock/%s", c.baseUrl, symbol), nil)
 	if err != nil {
 		return BrokerListResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add("symbol", symbol)
 	q.Add("region", string(region))
 	q.Add("sortBy", string(sortBy))
 	q.Add("sortDirection", string(sortDirection))

@@ -206,13 +206,13 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get market stocks with broker statistics
-		_, err = client.GetMarketStocks(ctx, RegionTr, BrokerSortNetAmount, BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+		_, err = client.GetMarketStocks(ctx, RegionTr, BrokerSortNetAmount, SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 		if err != nil {
 			t.Errorf("GetMarketStocks failed: %v", err)
 		}
 
 		// Get brokers by stock
-		_, err = client.GetBrokersByStock(ctx, "THYAO", RegionTr, BrokerSortNetAmount, BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+		_, err = client.GetBrokersByStock(ctx, "THYAO", RegionTr, BrokerSortNetAmount, SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 		if err != nil {
 			t.Errorf("GetBrokersByStock failed: %v", err)
 		}
@@ -230,25 +230,11 @@ func TestReadme(t *testing.T) {
 	// Test WebSocket Client methods
 	t.Run("WebSocket Client", func(t *testing.T) {
 		// Get WebSocket URL for real-time data
-		_, err := client.GetWebSocketUrl(ctx, "user-id", []FeedType{FeedTypeLivePriceTR}, RegionTr)
+		_, err := client.GetWebSocketUrl(ctx, "user-id", []FeedType{FeedTypeLivePriceTR})
 		if err != nil {
 			t.Errorf("GetWebSocketUrl failed: %v", err)
 		}
 
-		// Update user details
-		err = client.UpdateUserDetails(ctx, UpdateUserDetailsParams{
-			ExternalUserID: "user-id",
-			FirstName:      "John",
-			LastName:       "Doe",
-			Address:        "123 Main St",
-			City:           "New York",
-			CountryCode:    "US",
-			AccessorType:   AccessorTypeUser,
-			Active:         true,
-		})
-		if err != nil {
-			t.Errorf("UpdateUserDetails failed: %v", err)
-		}
 	})
 
 	// Test Capital Increase Client methods
@@ -266,7 +252,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get active rights for an instrument
-		_, err = client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15", RegionTr)
+		_, err = client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15")
 		if err != nil {
 			t.Errorf("GetActiveRightsForInstrument failed: %v", err)
 		}

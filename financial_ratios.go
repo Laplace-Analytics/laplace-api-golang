@@ -169,7 +169,7 @@ const (
 )
 
 // GetHistoricalRatios fetches historical financial ratios for a stock over time with sector comparisons.
-func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []HistoricalRatiosKey, region Region) ([]StockHistoricalRatios, error) {
+func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []HistoricalRatiosKey, region Region, locale ...Locale) ([]StockHistoricalRatios, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/stock/historical-ratios", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
@@ -181,6 +181,9 @@ func (c *Client) GetHistoricalRatios(ctx context.Context, symbol string, keys []
 	q.Add("slugs", strings.Join(lo.Map(keys, func(key HistoricalRatiosKey, _ int) string {
 		return string(key)
 	}), ","))
+	if len(locale) > 0 {
+		q.Add("locale", string(locale[0]))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]StockHistoricalRatios](ctx, c, req)

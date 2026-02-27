@@ -24,10 +24,18 @@ const (
 	LocaleNone Locale = "none"
 )
 
+type SortDirection string
+
+const (
+	SortDirectionDesc SortDirection = "desc"
+	SortDirectionAsc  SortDirection = "asc"
+)
+
 type Collection struct {
 	ID          primitive.ObjectID `json:"id"`
 	Title       string             `json:"title"`
 	Region      []Region           `json:"region"`
+	Locale      Locale             `json:"locale,omitempty"`
 	ImageUrl    string             `json:"imageUrl"`
 	AvatarUrl   string             `json:"avatarUrl"`
 	NumStocks   int                `json:"numStocks"`
@@ -72,7 +80,8 @@ func (c *Client) GetAllCollections(ctx context.Context, region Region, locale Lo
 }
 
 // GetCollectionDetail fetches detailed information about a specific collection including its constituent stocks.
-func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Region, locale Locale) (CollectionDetail, error) {
+// An optional sortBy parameter can be provided to sort stocks (e.g. SortByPriceChange).
+func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Region, locale Locale, sortBy ...SortBy) (CollectionDetail, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/collection/%s", c.baseUrl, id)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -82,6 +91,9 @@ func (c *Client) GetCollectionDetail(ctx context.Context, id string, region Regi
 	q := req.URL.Query()
 	q.Add("region", string(region))
 	q.Add("locale", string(locale))
+	if len(sortBy) > 0 && sortBy[0] != "" {
+		q.Add("sortBy", string(sortBy[0]))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	res, err := sendRequest[CollectionDetail](ctx, c, req)

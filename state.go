@@ -38,6 +38,7 @@ func (c *Client) GetStateOfAllMarkets(ctx context.Context, region Region, page, 
 	return res, nil
 }
 
+// GetStateOfAllStocks returns the state of all stocks for a given region.
 func (c *Client) GetStateOfAllStocks(ctx context.Context, region Region, page, size int) (PaginatedResponse[*MarketState], error) {
 	endpoint := fmt.Sprintf("%s/api/v1/state/stock/all", c.baseUrl)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -59,6 +60,7 @@ func (c *Client) GetStateOfAllStocks(ctx context.Context, region Region, page, s
 	return res, nil
 }
 
+// GetStateForStock returns the current state of a specific stock.
 func (c *Client) GetStateForStock(ctx context.Context, symbol string) (MarketState, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/state/stock/%s", c.baseUrl, symbol)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -74,6 +76,7 @@ func (c *Client) GetStateForStock(ctx context.Context, symbol string) (MarketSta
 	return res, nil
 }
 
+// GetStateForMarket returns the current state of a specific market.
 func (c *Client) GetStateForMarket(ctx context.Context, symbol string) (MarketState, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/state/%s", c.baseUrl, symbol)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)

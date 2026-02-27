@@ -30,6 +30,8 @@ func (s *ThemeTestSuite) TestGetAllThemes() {
 	for _, theme := range resp {
 		s.Require().NotEmpty(theme.ID)
 		s.Require().NotEmpty(theme.Title)
+		s.Require().NotEmpty(theme.ImageUrl)
+		s.Require().NotEmpty(theme.AvatarUrl)
 		if theme.NumStocks > 0 {
 			hasStocks = true
 		}
@@ -42,7 +44,7 @@ func (s *ThemeTestSuite) TestGetThemeDetail() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetThemeDetail(ctx, "64ff31e14ee6ea1024a76e73", RegionTr, LocaleTr)
+	resp, err := client.GetThemeDetail(ctx, "6256b0647d0bb100123effa7", RegionTr, LocaleTr)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(resp)
 	s.Require().NotEmpty(resp.ID)
@@ -66,5 +68,6 @@ func (s *ThemeTestSuite) TestGetThemeDetail() {
 		s.Require().NotEmpty(stock.SectorId)
 		s.Require().NotEmpty(stock.IndustryId)
 		s.Require().NotEmpty(stock.AssetType)
+		s.Require().NotEmpty(stock.UpdatedDate)
 	}
 }

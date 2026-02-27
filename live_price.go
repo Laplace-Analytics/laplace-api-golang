@@ -16,6 +16,7 @@ const (
 	LivePriceTypePrice        LivePriceType = "price"
 	LivePriceTypeDelayedPrice LivePriceType = "delayed-price"
 	LivePriceTypeOrderBook    LivePriceType = "order-book"
+	LivePriceTypeBidAsk       LivePriceType = "bid-ask"
 )
 
 // MessageType represents the type of message in live data streams
@@ -45,10 +46,11 @@ const (
 
 // OrderbookLevel represents a single level in the orderbook
 type OrderbookLevel struct {
-	ID    int       `json:"level"`
-	Side  LevelSide `json:"side"`
-	Price float64   `json:"price"`
-	Size  float64   `json:"size"`
+	ID     int       `json:"level"`
+	Side   LevelSide `json:"side"`
+	Volume float64   `json:"vol"`
+	Orders int       `json:"orders"`
+	Price  float64   `json:"p"`
 }
 
 // OrderbookDeletedLevel represents a deleted level in the orderbook
@@ -62,12 +64,6 @@ type BISTStockOrderBookData struct {
 	Updated []OrderbookLevel        `json:"updated"`
 	Deleted []OrderbookDeletedLevel `json:"deleted"`
 	Symbol  string                  `json:"s"`
-}
-
-type LivePriceClient[T any] interface {
-	Close() error
-	Receive() <-chan LivePriceResult[T]
-	Subscribe(ctx context.Context, symbols []string) error
 }
 
 // LivePriceStream handles live price streaming for a specific region and type
@@ -182,6 +178,8 @@ func (s *LivePriceStream[T]) buildStreamURL() string {
 		endpoint = "/api/v1/stock/price/delayed"
 	case s.priceType == LivePriceTypeOrderBook:
 		endpoint = "/api/v1/stock/orderbook/live"
+	case s.priceType == LivePriceTypeBidAsk:
+		endpoint = "/api/v1/stock/price/bids"
 	default:
 		endpoint = "/api/v2/stock/price/live"
 	}
@@ -251,33 +249,39 @@ type BISTStockLiveData struct {
 }
 
 type USStockLiveData struct {
-	Symbol string  `json:"s"`
-	Price  float64 `json:"p"`
-	Date   int64   `json:"d"`
+	Symbol        string  `json:"s"`
+	Price         float64 `json:"p"`
+	Date          int64   `json:"d"`
+	PercentChange float64 `json:"pc"`
+	AmountChange  float64 `json:"ac"`
 }
 
 // ===== NEW UNIFIED STREAMING API =====
 
-// GetLivePriceStreamForBIST creates a new live price stream for BIST stocks
-func (c *Client) GetLivePriceStreamForBIST(symbols []string) *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
+// GetLivePriceStreamForBIST creates a new live price stream for BIST stocks.
+// Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
+func (c *Client) GetLivePriceStreamForBIST() *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
 	stream := NewLivePriceStream[LiveMessageV2[BISTStockLiveData]](c, LivePriceTypePrice, RegionTr)
 	return stream
 }
 
-// GetLivePriceStreamForUS creates a new live price stream for US stocks
-func (c *Client) GetLivePriceStreamForUS(symbols []string) *LivePriceStream[USStockLiveData] {
+// GetLivePriceStreamForUS creates a new live price stream for US stocks.
+// Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
+func (c *Client) GetLivePriceStreamForUS() *LivePriceStream[USStockLiveData] {
 	stream := NewLivePriceStream[USStockLiveData](c, LivePriceTypePrice, RegionUs)
 	return stream
 }
 
-// GetLiveOrderBookStreamForBIST creates a new order book stream for BIST stocks
-func (c *Client) GetLiveOrderBookStreamForBIST(symbols []string) *LivePriceStream[BISTStockOrderBookData] {
+// GetLiveOrderBookStreamForBIST creates a new order book stream for BIST stocks.
+// Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
+func (c *Client) GetLiveOrderBookStreamForBIST() *LivePriceStream[BISTStockOrderBookData] {
 	stream := NewLivePriceStream[BISTStockOrderBookData](c, LivePriceTypeOrderBook, RegionTr)
 	return stream
 }
 
-// GetDelayedPriceStreamForBIST creates a new delayed price stream for BIST stocks
-func (c *Client) GetDelayedPriceStreamForBIST(symbols []string) *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
+// GetDelayedPriceStreamForBIST creates a new delayed price stream for BIST stocks.
+// Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
+func (c *Client) GetDelayedPriceStreamForBIST() *LivePriceStream[LiveMessageV2[BISTStockLiveData]] {
 	stream := NewLivePriceStream[LiveMessageV2[BISTStockLiveData]](c, LivePriceTypeDelayedPrice, RegionTr)
 	return stream
 }
@@ -286,7 +290,7 @@ func (c *Client) GetDelayedPriceStreamForBIST(symbols []string) *LivePriceStream
 
 // CreateLivePriceStreamForBIST creates and subscribes to live price stream for BIST
 func (c *Client) CreateLivePriceStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[BISTStockLiveData]], error) {
-	stream := c.GetLivePriceStreamForBIST(symbols)
+	stream := c.GetLivePriceStreamForBIST()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
 	}
@@ -295,7 +299,7 @@ func (c *Client) CreateLivePriceStreamForBIST(ctx context.Context, symbols []str
 
 // CreateLivePriceStreamForUS creates and subscribes to live price stream for US stocks
 func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[USStockLiveData], error) {
-	stream := c.GetLivePriceStreamForUS(symbols)
+	stream := c.GetLivePriceStreamForUS()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
 	}
@@ -304,7 +308,7 @@ func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []strin
 
 // CreateLiveOrderBookStreamForBIST creates and subscribes to order book stream for BIST
 func (c *Client) CreateLiveOrderBookStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[BISTStockOrderBookData], error) {
-	stream := c.GetLiveOrderBookStreamForBIST(symbols)
+	stream := c.GetLiveOrderBookStreamForBIST()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to order book stream: %w", err)
 	}
@@ -313,7 +317,7 @@ func (c *Client) CreateLiveOrderBookStreamForBIST(ctx context.Context, symbols [
 
 // CreateDelayedPriceStreamForBIST creates and subscribes to delayed price stream for BIST
 func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[BISTStockLiveData]], error) {
-	stream := c.GetDelayedPriceStreamForBIST(symbols)
+	stream := c.GetDelayedPriceStreamForBIST()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to delayed price stream: %w", err)
 	}
@@ -322,7 +326,7 @@ func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []
 
 type BISTBidAskResponse struct {
 	Data BISTBidAskLiveData `json:"d"`
-	Type string             `json:"t"`
+	Type MessageType        `json:"t"`
 }
 
 type BISTBidAskLiveData struct {
@@ -332,37 +336,20 @@ type BISTBidAskLiveData struct {
 	Date   int64   `json:"d"`
 }
 
-// GetLiveBidAskForBIST streams real-time bid/ask price data for BIST (Turkish) stock symbols via Server-Sent Events.
-// Sending no symbols means all BIST stocks will be streamed.
-func (c *Client) GetLiveBidAskForBIST(ctx context.Context, symbols []string) (LivePriceClient[BISTBidAskResponse], error) {
-	if c == nil {
-		return nil, fmt.Errorf("client cannot be nil")
-	}
-	if ctx == nil {
-		return nil, fmt.Errorf("context cannot be nil")
-	}
-
-	streamID := uuid.New().String()
-	url := fmt.Sprintf("%s/api/v1/stock/price/bids?filter=%s&region=%s&stream=%s",
-		c.baseUrl, strings.Join(symbols, ","), string(RegionTr), streamID)
-
-	channel, cancelFunc, err := sendSSERequest[BISTBidAskResponse](ctx, c, url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to establish SSE connection: %w", err)
-	}
-
-	client := &livePriceClient[BISTBidAskResponse]{
-		ctx:        ctx,
-		sseChan:    channel,
-		c:          c,
-		region:     RegionTr,
-		symbols:    symbols,
-		outputChan: make(chan LivePriceResult[BISTBidAskResponse]),
-		closed:     false,
-		cancel:     cancelFunc,
-	}
-
-	go client.forwardData()
-
-	return client, nil
+// GetLiveBidAskStreamForBIST creates a new bid/ask price stream for BIST stocks.
+// Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
+// Passing no symbols to Subscribe means all BIST stocks will be streamed.
+func (c *Client) GetLiveBidAskStreamForBIST() *LivePriceStream[BISTBidAskResponse] {
+	stream := NewLivePriceStream[BISTBidAskResponse](c, LivePriceTypeBidAsk, RegionTr)
+	return stream
 }
+
+// CreateLiveBidAskStreamForBIST creates and subscribes to bid/ask price stream for BIST.
+func (c *Client) CreateLiveBidAskStreamForBIST(ctx context.Context, symbols []string) (*LivePriceStream[BISTBidAskResponse], error) {
+	stream := c.GetLiveBidAskStreamForBIST()
+	if err := stream.Subscribe(ctx, symbols); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to bid/ask stream: %w", err)
+	}
+	return stream, nil
+}
+

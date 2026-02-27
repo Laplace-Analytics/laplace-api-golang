@@ -92,7 +92,7 @@ func TestLivePriceSubscribe(t *testing.T) {
 	defer cancel()
 
 	// Use new manual stream creation for more control
-	stream := client.GetLivePriceStreamForBIST([]string{})
+	stream := client.GetLivePriceStreamForBIST()
 	err = stream.Subscribe(ctx, []string{"AKBNK"})
 	if err != nil {
 		t.Fatalf("Failed to subscribe to live price stream: %v", err)
@@ -254,13 +254,13 @@ func TestGetLiveBidAskForBIST(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	lc, err := client.GetLiveBidAskForBIST(ctx, []string{"AKBNK", "ISCTR"})
+	stream, err := client.CreateLiveBidAskStreamForBIST(ctx, []string{"AKBNK", "ISCTR"})
 	if err != nil {
-		t.Fatalf("Failed to create live bid/ask client: %v", err)
+		t.Fatalf("Failed to create live bid/ask stream: %v", err)
 	}
-	defer lc.Close()
+	defer stream.Close()
 
-	receiveChan := lc.Receive()
+	receiveChan := stream.Receive()
 
 	select {
 	case data := <-receiveChan:
@@ -309,13 +309,13 @@ func TestGetLiveBidAskForBIST_AllSymbols(t *testing.T) {
 	defer cancel()
 
 	// Test with empty symbols array (should stream all BIST stocks)
-	lc, err := client.GetLiveBidAskForBIST(ctx, []string{})
+	stream, err := client.CreateLiveBidAskStreamForBIST(ctx, []string{})
 	if err != nil {
-		t.Fatalf("Failed to create live bid/ask client for all symbols: %v", err)
+		t.Fatalf("Failed to create live bid/ask stream for all symbols: %v", err)
 	}
-	defer lc.Close()
+	defer stream.Close()
 
-	receiveChan := lc.Receive()
+	receiveChan := stream.Receive()
 
 	select {
 	case data := <-receiveChan:
@@ -348,11 +348,12 @@ func TestLiveBidAskSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	lc, err := client.GetLiveBidAskForBIST(ctx, []string{"AKBNK"})
+	stream := client.GetLiveBidAskStreamForBIST()
+	err = stream.Subscribe(ctx, []string{"AKBNK"})
 	if err != nil {
-		t.Fatalf("Failed to create live bid/ask client: %v", err)
+		t.Fatalf("Failed to subscribe to bid/ask stream: %v", err)
 	}
-	defer lc.Close()
+	defer stream.Close()
 
 	receivedData := []string{}
 
@@ -360,15 +361,15 @@ func TestLiveBidAskSubscribe(t *testing.T) {
 	go func() {
 		<-timer.C
 		// Switch to different symbols
-		lc.Subscribe(ctx, []string{"TUPRS", "ASELS"})
+		stream.Subscribe(ctx, []string{"TUPRS", "ASELS"})
 		receivedData = append(receivedData, "SWITCH")
 
 		timer.Reset(5 * time.Second)
 		<-timer.C
-		lc.Close()
+		stream.Close()
 	}()
 
-	receiveChan := lc.Receive()
+	receiveChan := stream.Receive()
 	for data := range receiveChan {
 		if data.Error != nil {
 			t.Fatalf("Received error: %v", data.Error)
@@ -411,18 +412,18 @@ func TestLiveBidAskClose(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	lc, err := client.GetLiveBidAskForBIST(ctx, []string{"AKBNK"})
+	stream, err := client.CreateLiveBidAskStreamForBIST(ctx, []string{"AKBNK"})
 	if err != nil {
-		t.Fatalf("Failed to create live bid/ask client: %v", err)
+		t.Fatalf("Failed to create live bid/ask stream: %v", err)
 	}
 
-	err = lc.Close()
+	err = stream.Close()
 	if err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
 
 	// Test multiple closes (should not error)
-	err = lc.Close()
+	err = stream.Close()
 	if err != nil {
 		t.Fatalf("Second close failed: %v", err)
 	}
@@ -439,7 +440,8 @@ func TestLiveBidAsk_NilContext(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	_, err = client.GetLiveBidAskForBIST(nil, []string{"AKBNK"})
+	stream := client.GetLiveBidAskStreamForBIST()
+	err = stream.Subscribe(nil, []string{"AKBNK"}) //nolint:staticcheck // intentionally testing nil context rejection
 	if err == nil {
 		t.Fatal("Expected error for nil context")
 	}
@@ -447,16 +449,6 @@ func TestLiveBidAsk_NilContext(t *testing.T) {
 	expectedError := "context cannot be nil"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error message '%s', got '%s'", expectedError, err.Error())
-	}
-}
-
-func TestLiveBidAsk_NilClient(t *testing.T) {
-	ctx := context.Background()
-
-	var client *Client
-	_, err := client.GetLiveBidAskForBIST(ctx, []string{"AKBNK"})
-	if err == nil {
-		t.Fatal("Expected error for nil client")
 	}
 }
 

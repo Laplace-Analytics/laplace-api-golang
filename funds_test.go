@@ -32,6 +32,15 @@ func getAllFundTypes() []FundType {
 	}
 }
 
+func (s *FundsTestSuite) getTestFundSymbol() string {
+	client := newTestClient(s.Config)
+	ctx := context.Background()
+	resp, err := client.GetFunds(ctx, RegionTr, 0, 10)
+	s.Require().NoError(err)
+	s.Require().Greater(len(resp), 0)
+	return resp[0].Symbol
+}
+
 func (s *FundsTestSuite) TestGetFunds() {
 	client := newTestClient(s.Config)
 
@@ -48,47 +57,48 @@ func (s *FundsTestSuite) TestGetFunds() {
 	s.Require().NotEmpty(fund.OwnerSymbol)
 	s.Require().Equal(AssetTypeFund, fund.AssetType)
 	s.Require().GreaterOrEqual(fund.ManagementFee, 0.0)
+	s.Require().GreaterOrEqual(fund.RiskLevel, 0)
 	s.Require().Contains(getAllFundTypes(), fund.FundType)
 }
 
 func (s *FundsTestSuite) TestGetFundStats() {
 	client := newTestClient(s.Config)
-
 	ctx := context.Background()
+	symbol := s.getTestFundSymbol()
 
-	resp, err := client.GetFundStats(ctx, "HIM", RegionTr)
+	resp, err := client.GetFundStats(ctx, symbol, RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 }
 
 func (s *FundsTestSuite) TestGetFundDistribution() {
 	client := newTestClient(s.Config)
-
 	ctx := context.Background()
+	symbol := s.getTestFundSymbol()
 
-	resp, err := client.GetFundDistribution(ctx, "HIM", RegionTr)
+	resp, err := client.GetFundDistribution(ctx, symbol, RegionTr)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 	s.Require().Greater(len(resp.Categories), 0)
 
 	for _, category := range resp.Categories {
 		s.Require().NotEmpty(category.Category)
-		s.Require().Greater(category.Percentage, 0)
+		s.Require().Greater(category.Percentage, 0.0)
 	}
 }
 
 func (s *FundsTestSuite) TestGetHistoricalFundPrices() {
 	client := newTestClient(s.Config)
-
 	ctx := context.Background()
+	symbol := s.getTestFundSymbol()
 
-	resp, err := client.GetHistoricalFundPrices(ctx, "HIM", RegionTr, HistoricalFundPricePeriodOneMonth)
+	resp, err := client.GetHistoricalFundPrices(ctx, symbol, RegionTr, HistoricalFundPricePeriodOneMonth)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 	s.Require().Greater(len(resp), 0)
 
 	price := resp[0]
-	s.Require().NotEmpty(price.Date)
+	s.Require().NotZero(price.Date)
 	s.Require().Greater(price.Price, 0.0)
 	s.Require().Greater(price.Aum, 0.0)
 	s.Require().Greater(price.ShareCount, 0.0)

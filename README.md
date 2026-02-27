@@ -177,14 +177,13 @@ movers, err := client.GetTopMovers(ctx, laplace.TopMoversDirectionGainers, lapla
 ### Live Price Client
 
 ```go
-// Get live prices for BIST stocks
-lc, err := client.GetLivePriceForBIST(ctx, []string{"THYAO", "GARAN"})
+// Create and subscribe to live prices for BIST stocks
+stream, err := client.CreateLivePriceStreamForBIST(ctx, []string{"THYAO", "GARAN"})
 
-// Get live prices for US stocks
-lc, err := client.GetLivePriceForUS(ctx, []string{"AAPL", "GOOGL"})
+// Or for US stocks
+stream, err := client.CreateLivePriceStreamForUS(ctx, []string{"AAPL", "GOOGL"})
 
-
-for data := range lc.Receive() {
+for data := range stream.Receive() {
 	fmt.Printf("Received data: %+v\n", data.Data)
 }
 
@@ -197,10 +196,10 @@ for data := range lc.Receive() {
 brokers, err := client.GetBrokers(ctx, laplace.RegionTr, 1, 10)
 
 // Get market stocks with broker statistics
-marketStocks, err := client.GetMarketStocks(ctx, laplace.RegionTr, laplace.BrokerSortNetAmount, laplace.BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+marketStocks, err := client.GetMarketStocks(ctx, laplace.RegionTr, laplace.BrokerSortNetAmount, laplace.SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 
 // Get brokers by stock
-brokersByStock, err := client.GetBrokersByStock(ctx, "THYAO", laplace.RegionTr, laplace.BrokerSortNetAmount, laplace.BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+brokersByStock, err := client.GetBrokersByStock(ctx, "THYAO", laplace.RegionTr, laplace.BrokerSortNetAmount, laplace.SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 ```
 
 ### Search Client
@@ -214,19 +213,7 @@ results, err := client.Search(ctx, "technology", []laplace.SearchType{laplace.Se
 
 ```go
 // Get WebSocket URL for real-time data
-url, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR}, laplace.RegionTr)
-
-// Update user details
-err = client.UpdateUserDetails(ctx, laplace.UpdateUserDetailsParams{
-	ExternalUserID: "user-id",
-	FirstName:      "John",
-	LastName:       "Doe",
-	Address:        "123 Main St",
-	City:           "New York",
-	CountryCode:    "US",
-	AccessorType:   laplace.AccessorTypeUser,
-	Active:         true,
-})
+url, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR})
 ```
 
 ### Capital Increase Client
@@ -239,7 +226,7 @@ increases, err := client.GetAllCapitalIncreases(ctx, 1, 10, laplace.RegionTr)
 instrumentIncreases, err := client.GetCapitalIncreasesForInstrument(ctx, "THYAO", 1, 10, laplace.RegionTr)
 
 // Get active rights for an instrument
-rights, err := client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15", laplace.RegionTr)
+rights, err := client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15")
 ```
 
 ### Custom Themes Client
@@ -249,7 +236,7 @@ rights, err := client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15", l
 themes, err := client.GetAllCustomThemes(ctx, laplace.LocaleEn)
 
 // Get custom theme detail
-themeDetail, err := client.GetCustomThemeDetail(ctx, "theme-id", laplace.RegionTr, laplace.LocaleEn, laplace.SortByPriceChange)
+themeDetail, err := client.GetCustomThemeDetail(ctx, "theme-id", laplace.LocaleEn, laplace.SortByPriceChange)
 
 // Create a custom theme
 id, err := client.CreateCustomTheme(ctx, laplace.CreateCustomThemeParams{
