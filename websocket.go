@@ -67,3 +67,14 @@ func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, fee
 	return resp.URL, nil
 }
 
+// RevokeWebSocketConnection revokes an active WebSocket connection by its ID (the UUID segment from the WebSocket URL).
+func (c *Client) RevokeWebSocketConnection(ctx context.Context, id string) error {
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/ws/user/revoke/%s", c.baseUrl, id), nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = sendRequest[any](ctx, c, req)
+	return err
+}
+
