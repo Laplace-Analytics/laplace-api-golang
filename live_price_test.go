@@ -92,7 +92,7 @@ func TestLivePriceSubscribe(t *testing.T) {
 	defer cancel()
 
 	// Use new manual stream creation for more control
-	stream := client.GetLivePriceStreamForBIST([]string{})
+	stream := client.GetLivePriceStreamForBIST()
 	err = stream.Subscribe(ctx, []string{"AKBNK"})
 	if err != nil {
 		t.Fatalf("Failed to subscribe to live price stream: %v", err)
@@ -348,7 +348,7 @@ func TestLiveBidAskSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	stream := client.GetLiveBidAskStreamForBIST([]string{})
+	stream := client.GetLiveBidAskStreamForBIST()
 	err = stream.Subscribe(ctx, []string{"AKBNK"})
 	if err != nil {
 		t.Fatalf("Failed to subscribe to bid/ask stream: %v", err)
@@ -440,7 +440,7 @@ func TestLiveBidAsk_NilContext(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	stream := client.GetLiveBidAskStreamForBIST([]string{"AKBNK"})
+	stream := client.GetLiveBidAskStreamForBIST()
 	err = stream.Subscribe(nil, []string{"AKBNK"})
 	if err == nil {
 		t.Fatal("Expected error for nil context")
