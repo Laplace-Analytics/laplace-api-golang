@@ -359,12 +359,12 @@ func (c *Client) GetTickRules(ctx context.Context, symbol string, region Region)
 }
 
 type GenerateChartImageRequest struct {
-	Symbol     string                  `json:"symbol"`
-	Period     HistoricalPricePeriod   `json:"period,omitempty"`
-	Region     Region                  `json:"region"`
-	Resolution HistoricalPriceInterval `json:"resolution,omitempty"`
-	Indicators []string                `json:"indicators,omitempty"`
-	ChartType  *int                    `json:"chartType,omitempty"`
+	Symbol     string
+	Period     HistoricalPricePeriod
+	Region     Region
+	Resolution HistoricalPriceInterval
+	Indicators []string
+	ChartType  *int
 }
 
 // GetStockChartImage generates a chart image for a stock and returns the raw image bytes.

@@ -206,13 +206,13 @@ func TestReadme(t *testing.T) {
 		}
 
 		// Get market stocks with broker statistics
-		_, err = client.GetMarketStocks(ctx, RegionTr, BrokerSortNetAmount, BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+		_, err = client.GetMarketStocks(ctx, RegionTr, BrokerSortNetAmount, SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 		if err != nil {
 			t.Errorf("GetMarketStocks failed: %v", err)
 		}
 
 		// Get brokers by stock
-		_, err = client.GetBrokersByStock(ctx, "THYAO", RegionTr, BrokerSortNetAmount, BrokerSortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
+		_, err = client.GetBrokersByStock(ctx, "THYAO", RegionTr, BrokerSortNetAmount, SortDirectionDesc, "2024-01-01", "2024-01-31", 1, 10)
 		if err != nil {
 			t.Errorf("GetBrokersByStock failed: %v", err)
 		}

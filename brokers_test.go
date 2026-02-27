@@ -66,7 +66,7 @@ func (s *BrokerTestSuite) TestGetMarketBrokers() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetMarketBrokers(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
+	resp, err := client.GetMarketBrokers(ctx, RegionTr, BrokerSortTotalVolume, SortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -103,7 +103,7 @@ func (s *BrokerTestSuite) TestGetMarketStocks() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetMarketStocks(ctx, RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
+	resp, err := client.GetMarketStocks(ctx, RegionTr, BrokerSortTotalVolume, SortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -144,7 +144,7 @@ func (s *BrokerTestSuite) TestGetBrokersByStock() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetBrokersByStock(ctx, "SASA", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
+	resp, err := client.GetBrokersByStock(ctx, "SASA", RegionTr, BrokerSortTotalVolume, SortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 
@@ -183,7 +183,7 @@ func (s *BrokerTestSuite) TestGetStocksByBroker() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetStocksByBroker(ctx, "BIYKR", RegionTr, BrokerSortTotalVolume, BrokerSortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
+	resp, err := client.GetStocksByBroker(ctx, "BIYKR", RegionTr, BrokerSortTotalVolume, SortDirectionDesc, "2025-06-01", "2025-12-01", 0, 5)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 

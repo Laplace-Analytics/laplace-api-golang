@@ -326,7 +326,7 @@ func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []
 
 type BISTBidAskResponse struct {
 	Data BISTBidAskLiveData `json:"d"`
-	Type string             `json:"t"`
+	Type MessageType        `json:"t"`
 }
 
 type BISTBidAskLiveData struct {
