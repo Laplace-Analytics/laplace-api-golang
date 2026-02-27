@@ -118,7 +118,12 @@ func sendRawRequest(
 	if res.StatusCode != http.StatusOK {
 		var msg LaplaceHTTPErrorMsg
 		if err := json.Unmarshal(body, &msg); err != nil {
-			return nil, err
+			// Response body is not JSON (e.g. HTML error page); include status code and truncated body
+			preview := string(body)
+			if len(preview) > 200 {
+				preview = preview[:200]
+			}
+			return nil, fmt.Errorf("HTTP %d: %s", res.StatusCode, preview)
 		}
 
 		return nil, getLaplaceError(&LaplaceHTTPError{
