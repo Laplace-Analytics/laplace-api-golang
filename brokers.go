@@ -143,7 +143,6 @@ func (c *Client) GetBrokersByStock(ctx context.Context, symbol string, region Re
 	}
 
 	q := req.URL.Query()
-	q.Add("symbol", symbol)
 	q.Add("region", string(region))
 	q.Add("sortBy", string(sortBy))
 	q.Add("sortDirection", string(sortDirection))
@@ -169,7 +168,6 @@ func (c *Client) GetStocksByBroker(ctx context.Context, symbol string, region Re
 	}
 
 	q := req.URL.Query()
-	q.Add("symbol", symbol)
 	q.Add("region", string(region))
 	q.Add("sortBy", string(sortBy))
 	q.Add("sortDirection", string(sortDirection))
