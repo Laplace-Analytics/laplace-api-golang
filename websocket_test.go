@@ -2,6 +2,8 @@ package laplace
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -41,4 +43,38 @@ func (s *WebSocketTestSuite) TestGetWebsocketUsageForMonth() {
 		s.Require().NotZero(usage.FirstConnectionTime)
 		s.Require().Greater(usage.UniqueDeviceCount, int64(0))
 	}
+}
+
+func (s *WebSocketTestSuite) TestRevokeWebSocketConnection() {
+	client := newTestClient(s.Config)
+	ctx := context.Background()
+
+	// Generate a WebSocket URL to get a valid connection ID
+	url, err := client.GetWebSocketUrl(ctx, "test-revoke-user", []FeedType{FeedTypeLivePriceTR})
+	s.Require().NoError(err)
+	s.Require().NotEmpty(url)
+
+	// Extract the UUID from the URL (last path segment)
+	parts := strings.Split(url, "/")
+	id := parts[len(parts)-1]
+	s.Require().NotEmpty(id)
+
+	// Revoke the connection
+	err = client.RevokeWebSocketConnection(ctx, id)
+	s.Require().NoError(err)
+}
+
+func (s *WebSocketTestSuite) TestSendWebsocketEvent() {
+	client := newTestClient(s.Config)
+	ctx := context.Background()
+
+	event, _ := json.Marshal(map[string]string{"type": "test", "message": "hello"})
+	broadcastToAll := true
+
+	err := client.SendWebsocketEvent(ctx, SendWebsocketEventRequest{
+		Event:          event,
+		Transient:      &broadcastToAll,
+		BroadCastToAll: true,
+	})
+	s.Require().NoError(err)
 }
