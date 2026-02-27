@@ -24,6 +24,7 @@ const (
 	AggregatePricePeriodFiveYear   AggregatePricePeriod = "5Y"
 )
 
+// GetAggregateGraph retrieves the aggregate price graph for a sector, industry, or collection.
 func (c *Client) GetAggregateGraph(ctx context.Context, period AggregatePricePeriod, region Region, sectorId, industryId, collectionId string) (CollectionPriceGraph, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/aggregate/graph", c.baseUrl)
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
