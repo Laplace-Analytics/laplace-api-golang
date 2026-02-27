@@ -24,6 +24,13 @@ const (
 	LocaleNone Locale = "none"
 )
 
+type SortDirection string
+
+const (
+	SortDirectionDesc SortDirection = "desc"
+	SortDirectionAsc  SortDirection = "asc"
+)
+
 type Collection struct {
 	ID          primitive.ObjectID `json:"id"`
 	Title       string             `json:"title"`

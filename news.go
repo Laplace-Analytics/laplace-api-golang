@@ -114,7 +114,7 @@ type GetNewsParams struct {
 	Page             *int
 	Size             *int
 	OrderBy          NewsOrderBy
-	OrderByDirection BrokerSortDirection
+	OrderByDirection SortDirection
 	ExtraFilters     string
 }
 

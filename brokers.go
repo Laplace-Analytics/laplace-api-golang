@@ -19,7 +19,8 @@ const (
 	BrokerSortTotalSellVolume BrokerSort = "totalSellVolume"
 )
 
-type BrokerSortDirection string
+// BrokerSortDirection is an alias for SortDirection, kept for backwards compatibility.
+type BrokerSortDirection = SortDirection
 
 const (
 	BrokerSortDirectionDesc BrokerSortDirection = "desc"
