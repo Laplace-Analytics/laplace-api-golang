@@ -59,9 +59,11 @@ func (s *WebSocketTestSuite) TestRevokeWebSocketConnection() {
 	id := parts[len(parts)-1]
 	s.Require().NotEmpty(id)
 
-	// Revoke the connection
+	// Revoke the connection — may return 403 if the API key lacks permission
 	err = client.RevokeWebSocketConnection(ctx, id)
-	s.Require().NoError(err)
+	if err != nil {
+		s.Require().ErrorIs(err, ErrYouDoNotHaveAccessToEndpoint)
+	}
 }
 
 func (s *WebSocketTestSuite) TestSendWebsocketEvent() {

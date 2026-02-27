@@ -441,7 +441,7 @@ func TestLiveBidAsk_NilContext(t *testing.T) {
 	}
 
 	stream := client.GetLiveBidAskStreamForBIST()
-	err = stream.Subscribe(nil, []string{"AKBNK"})
+	err = stream.Subscribe(nil, []string{"AKBNK"}) //nolint:staticcheck // intentionally testing nil context rejection
 	if err == nil {
 		t.Fatal("Expected error for nil context")
 	}

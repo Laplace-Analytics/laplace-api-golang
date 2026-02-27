@@ -18,7 +18,7 @@ type FlexibleTime struct {
 
 func (ft *FlexibleTime) UnmarshalJSON(data []byte) error {
 	s := strings.Trim(string(data), "\"")
-	if s == "null" || s == "" {
+	if s == "null" || s == "" || s == "{}" {
 		return nil
 	}
 

@@ -31,6 +31,7 @@ func TestFlexibleTime_UnmarshalJSON(t *testing.T) {
 		{"unix timestamp", `1710489000`, false, 2024},
 		{"null", `null`, false, 0},
 		{"empty string", `""`, false, 0},
+		{"empty object", `"{}"`, false, 0},
 		{"invalid", `"not-a-date"`, true, 0},
 	}
 
