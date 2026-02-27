@@ -31,7 +31,7 @@ func (s *WebSocketTestSuite) TestGetWebsocketUsageForMonth() {
 	client := newTestClient(s.Config)
 	ctx := context.Background()
 
-	resp, err := client.GetWebsocketUsageForMonth(ctx, "1", "2025", FeedTypeLivePriceTR)
+	resp, err := client.GetWebsocketUsageForMonth(ctx, 1, 2025, FeedTypeLivePriceTR)
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 

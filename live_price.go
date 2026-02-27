@@ -1,14 +1,10 @@
 package laplace
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -357,58 +353,3 @@ func (c *Client) CreateLiveBidAskStreamForBIST(ctx context.Context, symbols []st
 	return stream, nil
 }
 
-type WebSocketMonthlyUsageData struct {
-	ExternalUserID      string    `json:"externalUserID"`
-	FirstConnectionTime time.Time `json:"firstConnectionTime"`
-	UniqueDeviceCount   int64     `json:"uniqueDeviceCount"`
-}
-
-// GetWebsocketUsageForMonth retrieves WebSocket usage statistics for a specific month.
-func (c *Client) GetWebsocketUsageForMonth(ctx context.Context, month string, year string, feedType FeedType) ([]WebSocketMonthlyUsageData, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/ws/report", c.baseUrl), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	q.Add("month", month)
-	q.Add("year", year)
-	q.Add("feedType", string(feedType))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := sendRequest[[]WebSocketMonthlyUsageData](ctx, c, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-type SendWebsocketEventRequest struct {
-	ExternalUserID string          `json:"externalUserID,omitempty"`
-	Event          json.RawMessage `json:"event"`
-	Transient      *bool           `json:"transient,omitempty"`
-	BroadCastToAll bool            `json:"broadCastToAll"`
-}
-
-// SendWebsocketEvent sends a custom event through the WebSocket connection.
-func (c *Client) SendWebsocketEvent(ctx context.Context, params SendWebsocketEventRequest) error {
-	jsonData, err := json.Marshal(params)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/ws/event", c.baseUrl), bytes.NewBuffer(jsonData))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	_, err = sendRequest[any](ctx, c, req)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
