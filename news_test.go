@@ -3,6 +3,7 @@ package laplace
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -101,4 +102,33 @@ func (s *NewsTestSuite) TestGetNewsWithType() {
 	})
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
+}
+
+func (s *NewsTestSuite) TestGetNewsStream() {
+	client := newTestClient(s.Config)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	stream, err := client.CreateNewsStream(ctx, LocaleEn)
+	s.Require().NoError(err)
+	defer stream.Close()
+
+	receiveChan := stream.Receive()
+
+	select {
+	case data := <-receiveChan:
+		if data.Error != nil {
+			s.T().Logf("Received error: %v", data.Error)
+		} else {
+			s.T().Logf("Received stream data slice length: %d", len(data.Data))
+			if len(data.Data) > 0 {
+				news := data.Data[0]
+				s.Require().NotEmpty(news.URL)
+				s.Require().NotZero(news.Timestamp)
+			}
+		}
+	case <-ctx.Done():
+		s.T().Log("Timeout waiting for stream data")
+	}
 }
