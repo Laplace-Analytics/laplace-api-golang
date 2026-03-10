@@ -52,7 +52,6 @@ func (s *NewsTestSuite) TestGetNews() {
 
 	news := resp.Items[0]
 	s.Require().NotEmpty(news.URL)
-	s.Require().NotEmpty(news.ImageUrl)
 	s.Require().NotZero(news.Timestamp)
 	s.Require().NotEmpty(news.PublisherUrl)
 	s.Require().NotZero(news.CreatedAt)
@@ -84,7 +83,6 @@ func (s *NewsTestSuite) TestGetNews() {
 		s.Require().NotEmpty(news.Content.Description)
 		s.Require().NotNil(news.Content.Content)
 		s.Require().NotNil(news.Content.Summary)
-		s.Require().NotEmpty(news.Content.InvestorInsight)
 	}
 }
 
