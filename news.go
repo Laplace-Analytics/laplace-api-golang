@@ -235,7 +235,16 @@ func sendNewsSSERequest(
 	return results, cancel, nil
 }
 
-// NewsStream handles live news streaming for a specific locale
+// StreamNewsParams holds the parameters for the news stream endpoint.
+type StreamNewsParams struct {
+	Locale     Locale
+	Sectors    string
+	Tickers    string
+	Categories string
+	Industries string
+}
+
+// NewsStream handles live news streaming for a specific locale and filters
 type NewsStream struct {
 	mu           sync.RWMutex
 	ctx          context.Context
@@ -243,7 +252,7 @@ type NewsStream struct {
 	sseChan      <-chan NewsStreamResult
 	outputChan   chan NewsStreamResult
 	c            *Client
-	locale       Locale
+	params       StreamNewsParams
 	closed       bool
 	isSubscribed bool
 }
@@ -321,12 +330,31 @@ func (s *NewsStream) cleanupExistingStream() error {
 
 // startStreaming starts the SSE streaming connection
 func (s *NewsStream) startStreaming() error {
-	url := fmt.Sprintf("%s/api/v1/news/stream?locale=%s", s.c.baseUrl, string(s.locale))
+	reqURL, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/stream", s.c.baseUrl), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create SSE request URL: %w", err)
+	}
+
+	q := reqURL.URL.Query()
+	q.Add("locale", string(s.params.Locale))
+	if s.params.Sectors != "" {
+		q.Add("sectors", s.params.Sectors)
+	}
+	if s.params.Tickers != "" {
+		q.Add("tickers", s.params.Tickers)
+	}
+	if s.params.Categories != "" {
+		q.Add("categories", s.params.Categories)
+	}
+	if s.params.Industries != "" {
+		q.Add("industries", s.params.Industries)
+	}
+	reqURL.URL.RawQuery = q.Encode()
 
 	ctxWithCancel, cancel := context.WithCancel(s.ctx)
 	s.cancel = cancel
 
-	channel, _, err := sendNewsSSERequest(ctxWithCancel, s.c, url)
+	channel, _, err := sendNewsSSERequest(ctxWithCancel, s.c, reqURL.URL.String())
 	if err != nil {
 		return fmt.Errorf("failed to establish SSE connection: %w", err)
 	}
@@ -374,17 +402,17 @@ func (s *NewsStream) forwardData() {
 
 // GetNewsStream creates a new news stream.
 // Call Subscribe(ctx) on the returned stream to start receiving data.
-func (c *Client) GetNewsStream(locale Locale) *NewsStream {
+func (c *Client) GetNewsStream(params StreamNewsParams) *NewsStream {
 	return &NewsStream{
 		c:      c,
-		locale: locale,
+		params: params,
 		closed: false,
 	}
 }
 
 // CreateNewsStream creates and subscribes to a news stream.
-func (c *Client) CreateNewsStream(ctx context.Context, locale Locale) (*NewsStream, error) {
-	stream := c.GetNewsStream(locale)
+func (c *Client) CreateNewsStream(ctx context.Context, params StreamNewsParams) (*NewsStream, error) {
+	stream := c.GetNewsStream(params)
 	if err := stream.Subscribe(ctx); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to news stream: %w", err)
 	}

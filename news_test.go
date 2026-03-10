@@ -110,7 +110,7 @@ func (s *NewsTestSuite) TestGetNewsStream() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stream, err := client.CreateNewsStream(ctx, LocaleEn)
+	stream, err := client.CreateNewsStream(ctx, StreamNewsParams{Locale: LocaleEn})
 	s.Require().NoError(err)
 	defer stream.Close()
 
