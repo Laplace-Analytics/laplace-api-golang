@@ -238,10 +238,10 @@ func sendNewsSSERequest(
 // StreamNewsParams holds the parameters for the news stream endpoint.
 type StreamNewsParams struct {
 	Locale     Locale
-	Sectors    string
-	Tickers    string
-	Categories string
-	Industries string
+	Sectors    []string
+	Tickers    []string
+	Categories []string
+	Industries []string
 }
 
 // NewsStream handles live news streaming for a specific locale and filters
@@ -337,17 +337,17 @@ func (s *NewsStream) startStreaming() error {
 
 	q := reqURL.URL.Query()
 	q.Add("locale", string(s.params.Locale))
-	if s.params.Sectors != "" {
-		q.Add("sectors", s.params.Sectors)
+	if len(s.params.Sectors) > 0 {
+		q.Add("sectors", strings.Join(s.params.Sectors, ","))
 	}
-	if s.params.Tickers != "" {
-		q.Add("tickers", s.params.Tickers)
+	if len(s.params.Tickers) > 0 {
+		q.Add("tickers", strings.Join(s.params.Tickers, ","))
 	}
-	if s.params.Categories != "" {
-		q.Add("categories", s.params.Categories)
+	if len(s.params.Categories) > 0 {
+		q.Add("categories", strings.Join(s.params.Categories, ","))
 	}
-	if s.params.Industries != "" {
-		q.Add("industries", s.params.Industries)
+	if len(s.params.Industries) > 0 {
+		q.Add("industries", strings.Join(s.params.Industries, ","))
 	}
 	reqURL.URL.RawQuery = q.Encode()
 
