@@ -92,6 +92,21 @@ type News struct {
 	Industries     *NewsIndustry   `json:"industries,omitempty"`
 }
 
+type NewsV2 struct {
+	URL          string          `json:"url"`
+	ImageUrl     string          `json:"imageUrl"`
+	Timestamp    time.Time       `json:"timestamp"`
+	PublisherUrl string          `json:"publisherUrl"`
+	Publisher    NewsPublisher   `json:"publisher"`
+	QualityScore int64           `json:"qualityScore"`
+	CreatedAt    time.Time       `json:"createdAt"`
+	Tickers      []NewsTicker    `json:"tickers,omitempty"`
+	Categories   *NewsCategories `json:"categories,omitempty"`
+	Sectors      *NewsSector     `json:"sectors,omitempty"`
+	Content      *NewsContent    `json:"content,omitempty"`
+	Industries   *NewsIndustry   `json:"industries,omitempty"`
+}
+
 // GetNewsHighlights retrieves news highlights categorized by sector for the specified region and locale.
 func (c *Client) GetNewsHighlights(ctx context.Context, region Region, locale Locale) (*NewsHighlights, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/highlights", c.baseUrl), nil)
@@ -161,9 +176,47 @@ func (c *Client) GetNews(ctx context.Context, params GetNewsParams) (*PaginatedR
 	return &resp, nil
 }
 
+// GetNewsV2 retrieves a paginated list of news articles from the v2 endpoint, excluding related tickers.
+func (c *Client) GetNewsV2(ctx context.Context, params GetNewsParams) (*PaginatedResponse[NewsV2], error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v2/news", c.baseUrl), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("region", string(params.Region))
+	q.Add("locale", string(params.Locale))
+	if params.NewsType != "" {
+		q.Add("newsType", string(params.NewsType))
+	}
+	if params.Page != nil {
+		q.Add("page", strconv.Itoa(*params.Page))
+	}
+	if params.Size != nil {
+		q.Add("size", strconv.Itoa(*params.Size))
+	}
+	if params.OrderBy != "" {
+		q.Add("orderBy", string(params.OrderBy))
+	}
+	if params.OrderByDirection != "" {
+		q.Add("orderByDirection", string(params.OrderByDirection))
+	}
+	if params.ExtraFilters != "" {
+		q.Add("extraFilters", params.ExtraFilters)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[PaginatedResponse[NewsV2]](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
 // NewsStreamResult is the result type for news streams
 type NewsStreamResult struct {
-	Data  []News
+	Data  []NewsV2
 	Error error
 }
 
@@ -217,7 +270,7 @@ func sendNewsSSERequest(
 				line := scanner.Text()
 				if strings.HasPrefix(line, "data:") {
 					data := strings.TrimPrefix(line, "data:")
-					var event []News
+					var event []NewsV2
 					if err := json.Unmarshal([]byte(data), &event); err != nil {
 						results <- NewsStreamResult{Error: fmt.Errorf("error unmarshalling event: %w", err)}
 						continue
