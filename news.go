@@ -290,6 +290,7 @@ func sendNewsSSERequest(
 
 // StreamNewsParams holds the parameters for the news stream endpoint.
 type StreamNewsParams struct {
+	Region     Region
 	Locale     Locale
 	Sectors    []string
 	Tickers    []string
@@ -390,6 +391,7 @@ func (s *NewsStream) startStreaming() error {
 
 	q := reqURL.URL.Query()
 	q.Add("locale", string(s.params.Locale))
+	q.Add("region", string(s.params.Region))
 	if len(s.params.Sectors) > 0 {
 		q.Add("sectors", strings.Join(s.params.Sectors, ","))
 	}
