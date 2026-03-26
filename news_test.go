@@ -109,6 +109,7 @@ func (s *NewsTestSuite) TestGetNewsStream() {
 	defer cancel()
 
 	stream, err := client.CreateNewsStream(ctx, StreamNewsParams{
+		Region:     RegionUs,
 		Locale:     LocaleEn,
 		Sectors:    []string{"tech", "finance"},
 		Tickers:    []string{"AAPL", "GOOGL"},
