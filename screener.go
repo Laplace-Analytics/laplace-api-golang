@@ -11,6 +11,7 @@ import (
 type ScreenerSortBy string
 
 const (
+	ScreenerSortBySymbol           ScreenerSortBy = "symbol"
 	ScreenerSortByPrice            ScreenerSortBy = "price"
 	ScreenerSortByDailyChange      ScreenerSortBy = "dailyChange"
 	ScreenerSortByMarketCap        ScreenerSortBy = "marketCap"
