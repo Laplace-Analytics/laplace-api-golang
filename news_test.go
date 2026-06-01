@@ -35,6 +35,22 @@ func (s *NewsTestSuite) TestGetNewsHighlights() {
 	s.Require().NotNil(resp.Other)
 }
 
+func (s *NewsTestSuite) TestGetNewsCategories() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetNewsCategories(ctx, LocaleEn)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	for _, category := range resp {
+		s.Require().NotEmpty(category.ID)
+		s.Require().NotEmpty(category.Name)
+	}
+}
+
 func (s *NewsTestSuite) TestGetNews() {
 	client := newTestClient(s.Config)
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,7 +26,8 @@ const (
 type NewsOrderBy string
 
 const (
-	NewsOrderByTimestamp NewsOrderBy = "timestamp"
+	NewsOrderByTimestamp    NewsOrderBy = "timestamp"
+	NewsOrderByQualityScore NewsOrderBy = "quality_score"
 )
 
 type NewsHighlights struct {
@@ -107,6 +109,35 @@ type NewsV2 struct {
 	Industries   *NewsIndustry   `json:"industries,omitempty"`
 }
 
+// NewsCategory is a canonical news category with a localized name, as returned by the
+// News Categories endpoint. The Name value is the exact value accepted by the `categories`
+// filter of the News V2 and Live News Stream endpoints.
+type NewsCategory struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetNewsCategories returns the full canonical news category list with localized names for the
+// given locale. All categories are always returned regardless of whether they currently have
+// tagged news, making the result suitable for populating dropdowns and filter UIs.
+func (c *Client) GetNewsCategories(ctx context.Context, locale Locale) ([]NewsCategory, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/categories", c.baseUrl), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("locale", string(locale))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := sendRequest[[]NewsCategory](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // GetNewsHighlights retrieves news highlights categorized by sector for the specified region and locale.
 func (c *Client) GetNewsHighlights(ctx context.Context, region Region, locale Locale) (*NewsHighlights, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/highlights", c.baseUrl), nil)
@@ -135,17 +166,19 @@ type GetNewsParams struct {
 	Size             *int
 	OrderBy          NewsOrderBy
 	OrderByDirection SortDirection
-	ExtraFilters     string
+	Symbols          string
+	Categories       string
+	Sectors          string
+	Industries       string
+	QualityScoreMin  *int
+	QualityScoreMax  *int
+	TimestampFrom    string
+	TimestampTo      string
 }
 
-// GetNews retrieves a paginated list of news articles with optional filtering by type, ordering, and extra filters.
-func (c *Client) GetNews(ctx context.Context, params GetNewsParams) (*PaginatedResponse[News], error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news", c.baseUrl), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
+// buildNewsQuery builds the shared query parameters for the news endpoints.
+func buildNewsQuery(params GetNewsParams) url.Values {
+	q := url.Values{}
 	q.Add("region", string(params.Region))
 	q.Add("locale", string(params.Locale))
 	if params.NewsType != "" {
@@ -163,10 +196,41 @@ func (c *Client) GetNews(ctx context.Context, params GetNewsParams) (*PaginatedR
 	if params.OrderByDirection != "" {
 		q.Add("orderByDirection", string(params.OrderByDirection))
 	}
-	if params.ExtraFilters != "" {
-		q.Add("extraFilters", params.ExtraFilters)
+	if params.Symbols != "" {
+		q.Add("symbols", params.Symbols)
 	}
-	req.URL.RawQuery = q.Encode()
+	if params.Categories != "" {
+		q.Add("categories", params.Categories)
+	}
+	if params.Sectors != "" {
+		q.Add("sectors", params.Sectors)
+	}
+	if params.Industries != "" {
+		q.Add("industries", params.Industries)
+	}
+	if params.QualityScoreMin != nil {
+		q.Add("qualityScoreMin", strconv.Itoa(*params.QualityScoreMin))
+	}
+	if params.QualityScoreMax != nil {
+		q.Add("qualityScoreMax", strconv.Itoa(*params.QualityScoreMax))
+	}
+	if params.TimestampFrom != "" {
+		q.Add("timestampFrom", params.TimestampFrom)
+	}
+	if params.TimestampTo != "" {
+		q.Add("timestampTo", params.TimestampTo)
+	}
+	return q
+}
+
+// GetNews retrieves a paginated list of news articles with optional filtering, ordering, and pagination.
+func (c *Client) GetNews(ctx context.Context, params GetNewsParams) (*PaginatedResponse[News], error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news", c.baseUrl), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.URL.RawQuery = buildNewsQuery(params).Encode()
 
 	resp, err := sendRequest[PaginatedResponse[News]](ctx, c, req)
 	if err != nil {
@@ -183,28 +247,7 @@ func (c *Client) GetNewsV2(ctx context.Context, params GetNewsParams) (*Paginate
 		return nil, err
 	}
 
-	q := req.URL.Query()
-	q.Add("region", string(params.Region))
-	q.Add("locale", string(params.Locale))
-	if params.NewsType != "" {
-		q.Add("newsType", string(params.NewsType))
-	}
-	if params.Page != nil {
-		q.Add("page", strconv.Itoa(*params.Page))
-	}
-	if params.Size != nil {
-		q.Add("size", strconv.Itoa(*params.Size))
-	}
-	if params.OrderBy != "" {
-		q.Add("orderBy", string(params.OrderBy))
-	}
-	if params.OrderByDirection != "" {
-		q.Add("orderByDirection", string(params.OrderByDirection))
-	}
-	if params.ExtraFilters != "" {
-		q.Add("extraFilters", params.ExtraFilters)
-	}
-	req.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = buildNewsQuery(params).Encode()
 
 	resp, err := sendRequest[PaginatedResponse[NewsV2]](ctx, c, req)
 	if err != nil {
