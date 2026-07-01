@@ -51,6 +51,53 @@ func (s *NewsTestSuite) TestGetNewsCategories() {
 	}
 }
 
+func (s *NewsTestSuite) TestGetNewsLanes() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetNewsLanes(ctx)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	for _, lane := range resp {
+		s.Require().NotEmpty(lane.ID)
+		s.Require().NotEmpty(lane.Label)
+	}
+}
+
+func (s *NewsTestSuite) TestGetNewsApiSourceNames() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	resp, err := client.GetNewsApiSourceNames(ctx)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+	s.Require().Greater(len(resp), 0)
+
+	for _, name := range resp {
+		s.Require().NotEmpty(name)
+	}
+}
+
+func (s *NewsTestSuite) TestGetNewsWithLane() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	size := 10
+	resp, err := client.GetNews(ctx, GetNewsParams{
+		Region: RegionUs,
+		Locale: LocaleEn,
+		Lane:   NewsLaneGlobalMacro,
+		Size:   &size,
+	})
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+}
+
 func (s *NewsTestSuite) TestGetNews() {
 	client := newTestClient(s.Config)
 

@@ -30,6 +30,18 @@ const (
 	NewsOrderByQualityScore NewsOrderBy = "quality_score"
 )
 
+// NewsLane is a curated news surface that groups upstream sources. It is accepted by the `lane`
+// filter of the News, News V2, and Live News Stream endpoints. US lanes are NewsLaneGlobalMacro
+// and NewsLaneFastMovers; TR lanes are NewsLaneTrEkonomi and NewsLaneBist.
+type NewsLane string
+
+const (
+	NewsLaneGlobalMacro NewsLane = "global_macro"
+	NewsLaneTrEkonomi   NewsLane = "tr_ekonomi"
+	NewsLaneBist        NewsLane = "bist"
+	NewsLaneFastMovers  NewsLane = "fast_movers"
+)
+
 type NewsHighlights struct {
 	Consumer                []string `json:"consumer"`
 	EnergyAndUtilities      []string `json:"energyAndUtilities"`
@@ -138,6 +150,45 @@ func (c *Client) GetNewsCategories(ctx context.Context, locale Locale) ([]NewsCa
 	return resp, nil
 }
 
+// NewsLaneInfo is a selectable news lane as returned by the News Lanes endpoint. The ID value is
+// the exact value accepted by the `lane` filter of the News, News V2, and Live News Stream endpoints.
+type NewsLaneInfo struct {
+	ID    NewsLane `json:"id"`
+	Label string   `json:"label"`
+}
+
+// GetNewsLanes returns the fixed list of news lanes (id + label) suitable for building a lane
+// filter UI. The returned IDs feed the `lane` parameter of the News and Live News Stream endpoints.
+func (c *Client) GetNewsLanes(ctx context.Context) ([]NewsLaneInfo, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/lanes", c.baseUrl), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := sendRequest[[]NewsLaneInfo](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// GetNewsApiSourceNames returns the distinct api_source values present in the upstream news data,
+// suitable for populating a source filter.
+func (c *Client) GetNewsApiSourceNames(ctx context.Context) ([]string, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/api-source-names", c.baseUrl), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := sendRequest[[]string](ctx, c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // GetNewsHighlights retrieves news highlights categorized by sector for the specified region and locale.
 func (c *Client) GetNewsHighlights(ctx context.Context, region Region, locale Locale) (*NewsHighlights, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/highlights", c.baseUrl), nil)
@@ -162,6 +213,7 @@ type GetNewsParams struct {
 	Region           Region
 	Locale           Locale
 	NewsType         NewsType
+	Lane             NewsLane
 	Page             *int
 	Size             *int
 	OrderBy          NewsOrderBy
@@ -183,6 +235,9 @@ func buildNewsQuery(params GetNewsParams) url.Values {
 	q.Add("locale", string(params.Locale))
 	if params.NewsType != "" {
 		q.Add("newsType", string(params.NewsType))
+	}
+	if params.Lane != "" {
+		q.Add("lane", string(params.Lane))
 	}
 	if params.Page != nil {
 		q.Add("page", strconv.Itoa(*params.Page))
@@ -335,6 +390,7 @@ func sendNewsSSERequest(
 type StreamNewsParams struct {
 	Region     Region
 	Locale     Locale
+	Lane       NewsLane
 	Sectors    []string
 	Tickers    []string
 	Categories []string
@@ -435,6 +491,9 @@ func (s *NewsStream) startStreaming() error {
 	q := reqURL.URL.Query()
 	q.Add("locale", string(s.params.Locale))
 	q.Add("region", string(s.params.Region))
+	if s.params.Lane != "" {
+		q.Add("lane", string(s.params.Lane))
+	}
 	if len(s.params.Sectors) > 0 {
 		q.Add("sectors", strings.Join(s.params.Sectors, ","))
 	}
