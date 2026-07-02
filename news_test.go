@@ -77,8 +77,9 @@ func (s *NewsTestSuite) TestGetNewsApiSourceNames() {
 	s.Require().NotNil(resp)
 	s.Require().Greater(len(resp), 0)
 
-	for _, name := range resp {
-		s.Require().NotEmpty(name)
+	for _, source := range resp {
+		s.Require().NotEmpty(source.ID)
+		s.Require().NotEmpty(source.Name)
 	}
 }
 

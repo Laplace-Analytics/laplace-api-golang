@@ -173,15 +173,25 @@ func (c *Client) GetNewsLanes(ctx context.Context) ([]NewsLaneInfo, error) {
 	return resp, nil
 }
 
-// GetNewsApiSourceNames returns the distinct api_source values present in the upstream news data,
-// suitable for populating a source filter.
-func (c *Client) GetNewsApiSourceNames(ctx context.Context) ([]string, error) {
+// NewsApiSource is a configured upstream news source as returned by the News API Source Names
+// endpoint. The ID value is accepted by the `apiSource` filter of the News and Live News Stream
+// endpoints (comma-separated for multiple); Name is the human-readable display name
+// (e.g. "BBC Business", "Gazete Oksijen").
+type NewsApiSource struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetNewsApiSourceNames returns the configured news sources (id + name), suitable for populating a
+// source filter. The returned IDs feed the `apiSource` parameter of the News and Live News Stream
+// endpoints.
+func (c *Client) GetNewsApiSourceNames(ctx context.Context) ([]NewsApiSource, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/api-source-names", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := sendRequest[[]string](ctx, c, req)
+	resp, err := sendRequest[[]NewsApiSource](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +232,7 @@ type GetNewsParams struct {
 	Categories       string
 	Sectors          string
 	Industries       string
+	ApiSource        string
 	QualityScoreMin  *int
 	QualityScoreMax  *int
 	TimestampFrom    string
@@ -262,6 +273,9 @@ func buildNewsQuery(params GetNewsParams) url.Values {
 	}
 	if params.Industries != "" {
 		q.Add("industries", params.Industries)
+	}
+	if params.ApiSource != "" {
+		q.Add("apiSource", params.ApiSource)
 	}
 	if params.QualityScoreMin != nil {
 		q.Add("qualityScoreMin", strconv.Itoa(*params.QualityScoreMin))
@@ -395,6 +409,7 @@ type StreamNewsParams struct {
 	Tickers    []string
 	Categories []string
 	Industries []string
+	ApiSource  []string
 }
 
 // NewsStream handles live news streaming for a specific locale and filters
@@ -505,6 +520,9 @@ func (s *NewsStream) startStreaming() error {
 	}
 	if len(s.params.Industries) > 0 {
 		q.Add("industries", strings.Join(s.params.Industries, ","))
+	}
+	if len(s.params.ApiSource) > 0 {
+		q.Add("apiSource", strings.Join(s.params.ApiSource, ","))
 	}
 	reqURL.URL.RawQuery = q.Encode()
 
