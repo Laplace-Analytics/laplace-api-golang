@@ -23,16 +23,24 @@ func (s *NewsTestSuite) TestGetNewsHighlights() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetNewsHighlights(ctx, RegionUs, LocaleEn)
+	resp, err := client.GetNewsHighlights(ctx, GetNewsHighlightsParams{
+		Region: RegionUs,
+		Locale: LocaleEn,
+	})
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
-	s.Require().NotNil(resp.Consumer)
-	s.Require().NotNil(resp.EnergyAndUtilities)
-	s.Require().NotNil(resp.Finance)
-	s.Require().NotNil(resp.Healthcare)
-	s.Require().NotNil(resp.IndustrialsAndMaterials)
-	s.Require().NotNil(resp.Tech)
-	s.Require().NotNil(resp.Other)
+	s.Require().Greater(len(resp.Items), 0)
+
+	highlight := resp.Items[0]
+	s.Require().NotEmpty(highlight.ID)
+	s.Require().NotZero(highlight.CreatedAt)
+	s.Require().NotNil(highlight.Consumer)
+	s.Require().NotNil(highlight.EnergyAndUtilities)
+	s.Require().NotNil(highlight.Finance)
+	s.Require().NotNil(highlight.Healthcare)
+	s.Require().NotNil(highlight.IndustrialsAndMaterials)
+	s.Require().NotNil(highlight.Tech)
+	s.Require().NotNil(highlight.Other)
 }
 
 func (s *NewsTestSuite) TestGetNewsCategories() {
@@ -56,7 +64,7 @@ func (s *NewsTestSuite) TestGetNewsLanes() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetNewsLanes(ctx)
+	resp, err := client.GetNewsLanes(ctx, GetNewsLanesParams{})
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 	s.Require().Greater(len(resp), 0)
@@ -72,7 +80,7 @@ func (s *NewsTestSuite) TestGetNewsApiSourceNames() {
 
 	ctx := context.Background()
 
-	resp, err := client.GetNewsApiSourceNames(ctx)
+	resp, err := client.GetNewsApiSourceNames(ctx, GetNewsApiSourceNamesParams{})
 	s.Require().NoError(err)
 	s.Require().NotNil(resp)
 	s.Require().Greater(len(resp), 0)
@@ -173,12 +181,12 @@ func (s *NewsTestSuite) TestGetNewsStream() {
 	defer cancel()
 
 	stream, err := client.CreateNewsStream(ctx, StreamNewsParams{
-		Region:     RegionUs,
-		Locale:     LocaleEn,
-		Sectors:    []string{"tech", "finance"},
-		Tickers:    []string{"AAPL", "GOOGL"},
-		Categories: []string{"earnings", "ipo"},
-		Industries: []string{"software", "banking"},
+		Region:      RegionUs,
+		Locale:      LocaleEn,
+		Symbols:     []string{"AAPL", "GOOGL"},
+		CategoryIds: []string{"1", "2"},
+		SectorIds:   []string{"65533e047844ee7afe9941bf"},
+		IndustryIds: []string{"65533e441fa5c7b58afa0944"},
 	})
 	s.Require().NoError(err)
 	defer stream.Close()

@@ -42,14 +42,18 @@ const (
 	NewsLaneFastMovers  NewsLane = "fast_movers"
 )
 
-type NewsHighlights struct {
-	Consumer                []string `json:"consumer"`
-	EnergyAndUtilities      []string `json:"energyAndUtilities"`
-	Finance                 []string `json:"finance"`
-	Healthcare              []string `json:"healthcare"`
-	IndustrialsAndMaterials []string `json:"industrialsAndMaterials"`
-	Tech                    []string `json:"tech"`
-	Other                   []string `json:"other"`
+// NewsHighlight is a single dated highlights record, with the top news items bucketed by sector
+// group. It is one item of the paginated News Highlights response.
+type NewsHighlight struct {
+	ID                      string    `json:"id"`
+	CreatedAt               time.Time `json:"createdAt"`
+	Consumer                []string  `json:"consumer"`
+	EnergyAndUtilities      []string  `json:"energyAndUtilities"`
+	Finance                 []string  `json:"finance"`
+	Healthcare              []string  `json:"healthcare"`
+	IndustrialsAndMaterials []string  `json:"industrialsAndMaterials"`
+	Tech                    []string  `json:"tech"`
+	Other                   []string  `json:"other"`
 }
 
 type NewsPublisher struct {
@@ -157,12 +161,24 @@ type NewsLaneInfo struct {
 	Label string   `json:"label"`
 }
 
+// GetNewsLanesParams holds the optional parameters for the news lanes endpoint.
+type GetNewsLanesParams struct {
+	// Region, when set (RegionTr or RegionUs), restricts the result to lanes valid for that region.
+	Region Region
+}
+
 // GetNewsLanes returns the fixed list of news lanes (id + label) suitable for building a lane
 // filter UI. The returned IDs feed the `lane` parameter of the News and Live News Stream endpoints.
-func (c *Client) GetNewsLanes(ctx context.Context) ([]NewsLaneInfo, error) {
+func (c *Client) GetNewsLanes(ctx context.Context, params GetNewsLanesParams) ([]NewsLaneInfo, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/lanes", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if params.Region != "" {
+		q := req.URL.Query()
+		q.Add("region", string(params.Region))
+		req.URL.RawQuery = q.Encode()
 	}
 
 	resp, err := sendRequest[[]NewsLaneInfo](ctx, c, req)
@@ -182,14 +198,29 @@ type NewsApiSource struct {
 	Name string `json:"name"`
 }
 
+// GetNewsApiSourceNamesParams holds the optional parameters for the news api-source-names endpoint.
+type GetNewsApiSourceNamesParams struct {
+	Region   Region
+	Language Locale
+}
+
 // GetNewsApiSourceNames returns the configured news sources (id + name), suitable for populating a
 // source filter. The returned IDs feed the `apiSource` parameter of the News and Live News Stream
 // endpoints.
-func (c *Client) GetNewsApiSourceNames(ctx context.Context) ([]NewsApiSource, error) {
+func (c *Client) GetNewsApiSourceNames(ctx context.Context, params GetNewsApiSourceNamesParams) ([]NewsApiSource, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/api-source-names", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
+
+	q := req.URL.Query()
+	if params.Region != "" {
+		q.Add("region", string(params.Region))
+	}
+	if params.Language != "" {
+		q.Add("language", string(params.Language))
+	}
+	req.URL.RawQuery = q.Encode()
 
 	resp, err := sendRequest[[]NewsApiSource](ctx, c, req)
 	if err != nil {
@@ -199,19 +230,43 @@ func (c *Client) GetNewsApiSourceNames(ctx context.Context) ([]NewsApiSource, er
 	return resp, nil
 }
 
-// GetNewsHighlights retrieves news highlights categorized by sector for the specified region and locale.
-func (c *Client) GetNewsHighlights(ctx context.Context, region Region, locale Locale) (*NewsHighlights, error) {
+// GetNewsHighlightsParams holds the parameters for the news highlights endpoint. Region (which must
+// be RegionUs) and Locale are required. From/To (YYYY-MM-DD) narrow the result to highlights created
+// in that window; Skip/Top page the result, where Top is the page size (1-20).
+type GetNewsHighlightsParams struct {
+	Region Region
+	Locale Locale
+	From   string
+	To     string
+	Skip   *int
+	Top    *int
+}
+
+// GetNewsHighlights retrieves paginated, sector-categorized US news highlights, newest first.
+func (c *Client) GetNewsHighlights(ctx context.Context, params GetNewsHighlightsParams) (*PaginatedResponse[NewsHighlight], error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/news/highlights", c.baseUrl), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	q := req.URL.Query()
-	q.Add("region", string(region))
-	q.Add("locale", string(locale))
+	q.Add("region", string(params.Region))
+	q.Add("locale", string(params.Locale))
+	if params.From != "" {
+		q.Add("from", params.From)
+	}
+	if params.To != "" {
+		q.Add("to", params.To)
+	}
+	if params.Skip != nil {
+		q.Add("skip", strconv.Itoa(*params.Skip))
+	}
+	if params.Top != nil {
+		q.Add("top", strconv.Itoa(*params.Top))
+	}
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := sendRequest[NewsHighlights](ctx, c, req)
+	resp, err := sendRequest[PaginatedResponse[NewsHighlight]](ctx, c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -229,9 +284,9 @@ type GetNewsParams struct {
 	OrderBy          NewsOrderBy
 	OrderByDirection SortDirection
 	Symbols          string
-	Categories       string
-	Sectors          string
-	Industries       string
+	CategoryIds      string
+	SectorIds        string
+	IndustryIds      string
 	ApiSource        string
 	QualityScoreMin  *int
 	QualityScoreMax  *int
@@ -265,14 +320,14 @@ func buildNewsQuery(params GetNewsParams) url.Values {
 	if params.Symbols != "" {
 		q.Add("symbols", params.Symbols)
 	}
-	if params.Categories != "" {
-		q.Add("categories", params.Categories)
+	if params.CategoryIds != "" {
+		q.Add("categoryIds", params.CategoryIds)
 	}
-	if params.Sectors != "" {
-		q.Add("sectors", params.Sectors)
+	if params.SectorIds != "" {
+		q.Add("sectorIds", params.SectorIds)
 	}
-	if params.Industries != "" {
-		q.Add("industries", params.Industries)
+	if params.IndustryIds != "" {
+		q.Add("industryIds", params.IndustryIds)
 	}
 	if params.ApiSource != "" {
 		q.Add("apiSource", params.ApiSource)
@@ -402,14 +457,14 @@ func sendNewsSSERequest(
 
 // StreamNewsParams holds the parameters for the news stream endpoint.
 type StreamNewsParams struct {
-	Region     Region
-	Locale     Locale
-	Lane       NewsLane
-	Sectors    []string
-	Tickers    []string
-	Categories []string
-	Industries []string
-	ApiSource  []string
+	Region      Region
+	Locale      Locale
+	Lane        NewsLane
+	Symbols     []string
+	CategoryIds []string
+	SectorIds   []string
+	IndustryIds []string
+	ApiSource   []string
 }
 
 // NewsStream handles live news streaming for a specific locale and filters
@@ -509,17 +564,17 @@ func (s *NewsStream) startStreaming() error {
 	if s.params.Lane != "" {
 		q.Add("lane", string(s.params.Lane))
 	}
-	if len(s.params.Sectors) > 0 {
-		q.Add("sectors", strings.Join(s.params.Sectors, ","))
+	if len(s.params.Symbols) > 0 {
+		q.Add("symbols", strings.Join(s.params.Symbols, ","))
 	}
-	if len(s.params.Tickers) > 0 {
-		q.Add("tickers", strings.Join(s.params.Tickers, ","))
+	if len(s.params.CategoryIds) > 0 {
+		q.Add("categoryIds", strings.Join(s.params.CategoryIds, ","))
 	}
-	if len(s.params.Categories) > 0 {
-		q.Add("categories", strings.Join(s.params.Categories, ","))
+	if len(s.params.SectorIds) > 0 {
+		q.Add("sectorIds", strings.Join(s.params.SectorIds, ","))
 	}
-	if len(s.params.Industries) > 0 {
-		q.Add("industries", strings.Join(s.params.Industries, ","))
+	if len(s.params.IndustryIds) > 0 {
+		q.Add("industryIds", strings.Join(s.params.IndustryIds, ","))
 	}
 	if len(s.params.ApiSource) > 0 {
 		q.Add("apiSource", strings.Join(s.params.ApiSource, ","))
