@@ -68,17 +68,14 @@ type NewsTicker struct {
 }
 
 type NewsCategories struct {
+	ID           string  `json:"id"`
 	Name         string  `json:"name"`
-	NewsCount    int64   `json:"newsCount"`
 	CategoryType *string `json:"categoryType,omitempty"`
-	MeanType     *int64  `json:"meanType,omitempty"`
 }
 
 type NewsSector struct {
-	Name         string  `json:"name"`
-	NewsCount    int64   `json:"newsCount"`
-	CategoryType *string `json:"categoryType,omitempty"`
-	MeanType     *int64  `json:"meanType,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type NewsContent struct {
@@ -90,11 +87,12 @@ type NewsContent struct {
 }
 
 type NewsIndustry struct {
-	Name     string `json:"name"`
-	MeanType int64  `json:"meanType"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type News struct {
+	ID             string          `json:"id"`
 	URL            string          `json:"url"`
 	ImageUrl       string          `json:"imageUrl"`
 	Timestamp      time.Time       `json:"timestamp"`
@@ -111,6 +109,7 @@ type News struct {
 }
 
 type NewsV2 struct {
+	ID           string          `json:"id"`
 	URL          string          `json:"url"`
 	ImageUrl     string          `json:"imageUrl"`
 	Timestamp    time.Time       `json:"timestamp"`

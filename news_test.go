@@ -123,6 +123,7 @@ func (s *NewsTestSuite) TestGetNews() {
 	s.Require().Greater(len(resp.Items), 0)
 
 	news := resp.Items[0]
+	s.Require().NotEmpty(news.ID)
 	s.Require().NotEmpty(news.URL)
 	s.Require().NotZero(news.Timestamp)
 	s.Require().NotEmpty(news.PublisherUrl)
@@ -137,16 +138,17 @@ func (s *NewsTestSuite) TestGetNews() {
 	}
 
 	if news.Categories != nil {
+		s.Require().NotEmpty(news.Categories.ID)
 		s.Require().NotEmpty(news.Categories.Name)
-		s.Require().GreaterOrEqual(news.Categories.NewsCount, int64(0))
 	}
 
 	if news.Sectors != nil {
+		s.Require().NotEmpty(news.Sectors.ID)
 		s.Require().NotEmpty(news.Sectors.Name)
-		s.Require().GreaterOrEqual(news.Sectors.NewsCount, int64(0))
 	}
 
 	if news.Industries != nil {
+		s.Require().NotEmpty(news.Industries.ID)
 		s.Require().NotEmpty(news.Industries.Name)
 	}
 
