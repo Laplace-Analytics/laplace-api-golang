@@ -71,3 +71,56 @@ func (s *ScreenerTestSuite) TestScreenerWithFiltersAndSort() {
 		}
 	}
 }
+
+func (s *ScreenerTestSuite) TestScreenerRatingAndTechnicalFilters() {
+	client := newTestClient(s.Config)
+
+	ctx := context.Background()
+
+	minComposite := 90.0
+	minPriceVsSma200 := 0.0
+	minOffHigh := -15.0
+	maxOffHigh := 0.0
+	epsAcceleration := true
+
+	resp, err := client.Screener(ctx, RegionTr, ScreenerRequest{
+		Filters: &ScreenerFilters{
+			CompositeRating: &ScreenerRange{Min: &minComposite},
+			SMRRating:       []ScreenerRating{ScreenerRatingA, ScreenerRatingB},
+			ADRating:        []ScreenerRating{ScreenerRatingA, ScreenerRatingB},
+			EPSAcceleration: &epsAcceleration,
+			PriceVsSMA200:   &ScreenerRange{Min: &minPriceVsSma200},
+			OffHighPct:      &ScreenerRange{Min: &minOffHigh, Max: &maxOffHigh},
+		},
+		SortBy:    ScreenerSortByCompositeRating,
+		SortOrder: SortDirectionDesc,
+		Page:      1,
+		PageSize:  50,
+	})
+	s.Require().NoError(err)
+	s.Require().LessOrEqual(len(resp.Items), 50)
+
+	var prev *int
+	for _, item := range resp.Items {
+		s.Require().NotEmpty(item.Symbol)
+		if item.CompositeRating != nil {
+			s.Require().GreaterOrEqual(float64(*item.CompositeRating), minComposite)
+		}
+		if item.SMRRating != nil {
+			s.Require().Contains([]ScreenerRating{ScreenerRatingA, ScreenerRatingB}, *item.SMRRating)
+		}
+		if item.ADRating != nil {
+			s.Require().Contains([]ScreenerRating{ScreenerRatingA, ScreenerRatingB}, *item.ADRating)
+		}
+		if item.EPSAcceleration != nil {
+			s.Require().True(*item.EPSAcceleration)
+		}
+		if prev != nil && item.CompositeRating != nil {
+			s.Require().LessOrEqual(*item.CompositeRating, *prev)
+		}
+		if item.CompositeRating != nil {
+			cr := *item.CompositeRating
+			prev = &cr
+		}
+	}
+}
