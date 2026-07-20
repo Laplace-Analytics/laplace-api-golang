@@ -242,6 +242,16 @@ instrumentIncreases, err := client.GetCapitalIncreasesForInstrument(ctx, "THYAO"
 rights, err := client.GetActiveRightsForInstrument(ctx, "THYAO", "2024-01-15", laplace.RegionTr)
 ```
 
+### IPO (Halka Arz) Client
+
+```go
+// Get all IPO offerings
+ipos, err := client.GetAllHalkaArz(ctx, 1, 10, laplace.RegionTr)
+
+// Get a single IPO offering by id
+ipo, err := client.GetHalkaArzByID(ctx, 1)
+```
+
 ### Custom Themes Client
 
 ```go
