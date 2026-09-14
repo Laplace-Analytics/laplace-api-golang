@@ -19,7 +19,7 @@ The official Go SDK for the Laplace stock data platform. Get easy access to stoc
 ## Installation
 
 ```bash
-go get github.com/Laplace-Analytics/laplace-api-golang
+go get github.com/Laplace-Analytics/laplace-api-golang/v2
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Laplace-Analytics/laplace-api-golang"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
 )
 
 func main() {
@@ -180,11 +180,21 @@ movers, err := client.GetTopMovers(ctx, laplace.TopMoversDirectionGainers, lapla
 // Create and subscribe to live prices for BIST stocks
 stream, err := client.CreateLivePriceStreamForBIST(ctx, []string{"THYAO", "GARAN"})
 
-// Or for US stocks
+// Or for US stocks (same envelope, USStockLiveData payload)
 stream, err := client.CreateLivePriceStreamForUS(ctx, []string{"AAPL", "GOOGL"})
 
-for data := range stream.Receive() {
-	fmt.Printf("Received data: %+v\n", data.Data)
+// Every event is a LiveMessageV2 envelope. Type is "pr" for a price tick;
+// a "heartbeat" arrives every 10 seconds with an empty Data.
+for msg := range stream.Receive() {
+	if msg.Error != nil {
+		log.Println(msg.Error)
+		continue
+	}
+	if msg.Data.Type != laplace.MessageTypePrice {
+		continue
+	}
+	tick := msg.Data.Data
+	fmt.Printf("%s %.2f (%.2f%%)\n", tick.Symbol, tick.ClosePrice, tick.DailyPercentChange)
 }
 
 ```
@@ -274,7 +284,7 @@ insights, err := client.GetKeyInsights(ctx, "AAPL", laplace.RegionUs)
 ```go
 import (
 	"fmt"
-	"github.com/Laplace-Analytics/laplace-api-golang"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
 )
 
 client := laplace.NewClient(laplace.LaplaceConfiguration{

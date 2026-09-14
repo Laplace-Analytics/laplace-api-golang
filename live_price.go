@@ -29,11 +29,13 @@ const (
 	MessageTypeOrderbook   MessageType = "ob"
 )
 
-// LiveMessageV2 is a generic wrapper for live price messages
+// LiveMessageV2 is the envelope used by the v2 price feeds (live and delayed
+// BIST prices, US prices). On the wire every event looks like
+// {"t":"pr","d":{...}}; heartbeats arrive as {"t":"heartbeat"} with no "d",
+// so Data is only populated when Type is MessageTypePrice.
 type LiveMessageV2[T any] struct {
-	Data   T           `json:"data"`
-	Symbol string      `json:"symbol"`
-	Type   MessageType `json:"type"`
+	Type MessageType `json:"t"`
+	Data T           `json:"d"`
 }
 
 // LevelSide represents the side of an orderbook level
@@ -59,11 +61,13 @@ type OrderbookDeletedLevel struct {
 	Side LevelSide `json:"side"`
 }
 
-// BISTStockOrderBookData represents BIST stock order book data
+// BISTStockOrderBookData represents BIST stock order book data. Unlike the
+// price feeds the order book stream is not wrapped in an envelope and carries
+// the symbol under "symbol".
 type BISTStockOrderBookData struct {
 	Updated []OrderbookLevel        `json:"updated"`
 	Deleted []OrderbookDeletedLevel `json:"deleted"`
-	Symbol  string                  `json:"s"`
+	Symbol  string                  `json:"symbol"`
 }
 
 // LivePriceStream handles live price streaming for a specific region and type
@@ -267,8 +271,8 @@ func (c *Client) GetLivePriceStreamForBIST() *LivePriceStream[LiveMessageV2[BIST
 
 // GetLivePriceStreamForUS creates a new live price stream for US stocks.
 // Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
-func (c *Client) GetLivePriceStreamForUS() *LivePriceStream[USStockLiveData] {
-	stream := NewLivePriceStream[USStockLiveData](c, LivePriceTypePrice, RegionUs)
+func (c *Client) GetLivePriceStreamForUS() *LivePriceStream[LiveMessageV2[USStockLiveData]] {
+	stream := NewLivePriceStream[LiveMessageV2[USStockLiveData]](c, LivePriceTypePrice, RegionUs)
 	return stream
 }
 
@@ -298,7 +302,7 @@ func (c *Client) CreateLivePriceStreamForBIST(ctx context.Context, symbols []str
 }
 
 // CreateLivePriceStreamForUS creates and subscribes to live price stream for US stocks
-func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[USStockLiveData], error) {
+func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[USStockLiveData]], error) {
 	stream := c.GetLivePriceStreamForUS()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
@@ -352,4 +356,3 @@ func (c *Client) CreateLiveBidAskStreamForBIST(ctx context.Context, symbols []st
 	}
 	return stream, nil
 }
-

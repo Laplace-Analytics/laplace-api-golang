@@ -118,7 +118,7 @@ func TestLivePriceSubscribe(t *testing.T) {
 			t.Fatalf("Received error: %v", data.Error)
 		}
 
-		receivedData = append(receivedData, data.Data.Symbol)
+		receivedData = append(receivedData, data.Data.Data.Symbol)
 	}
 
 	idxOfSwitch := slices.Index(receivedData, "SWITCH")
