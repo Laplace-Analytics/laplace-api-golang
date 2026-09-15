@@ -181,27 +181,51 @@ func sendSSERequest[T any](
 		defer close(results)
 		defer cancel()
 
-		scanner := bufio.NewScanner(resp.Body)
-		for scanner.Scan() {
+		// send hands r to the consumer unless the stream is cancelled first.
+		// results is unbuffered, so a plain send would park this goroutine
+		// (and keep resp.Body open) forever once nobody is draining it.
+		send := func(r LivePriceResult[T]) bool {
 			select {
+			case results <- r:
+				return true
 			case <-ctxWithCancel.Done():
-				return
-			default:
-				line := scanner.Text()
-				if strings.HasPrefix(line, "data:") {
-					data := strings.TrimPrefix(line, "data:")
-					var event T
-					if err := json.Unmarshal([]byte(data), &event); err != nil {
-						results <- LivePriceResult[T]{Error: fmt.Errorf("error unmarshalling event: %w", err)}
-						continue
-					}
-					results <- LivePriceResult[T]{Data: event}
-				}
+				return false
 			}
 		}
 
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			if ctxWithCancel.Err() != nil {
+				return
+			}
+
+			line := scanner.Text()
+			if !strings.HasPrefix(line, "data:") {
+				continue
+			}
+
+			data := strings.TrimPrefix(line, "data:")
+			var event T
+			if err := json.Unmarshal([]byte(data), &event); err != nil {
+				if !send(LivePriceResult[T]{Error: fmt.Errorf("error unmarshalling event: %w", err)}) {
+					return
+				}
+				continue
+			}
+			if !send(LivePriceResult[T]{Data: event}) {
+				return
+			}
+		}
+
+		// Cancelling the context makes the body read fail. That is how Close,
+		// a second Subscribe and the caller's context stop the stream, so it
+		// is not an error worth reporting.
+		if ctxWithCancel.Err() != nil {
+			return
+		}
+
 		if err := scanner.Err(); err != nil {
-			results <- LivePriceResult[T]{Error: fmt.Errorf("error reading SSE stream: %w", err)}
+			send(LivePriceResult[T]{Error: fmt.Errorf("error reading SSE stream: %w", err)})
 		}
 	}()
 

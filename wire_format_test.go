@@ -108,6 +108,36 @@ func TestBISTPriceStreamDecodesV2Envelope(t *testing.T) {
 	}
 }
 
+func TestBISTPriceStreamDecodesStateChange(t *testing.T) {
+	// state_change events carry a market/stock state payload under "d" that
+	// does not match the price tick shape. They must surface with their Type
+	// set and an empty Data, not as a decode error, so consumers can filter
+	// on Type as the README tells them to.
+	c := newMockClient(t, sseHandler(t, "/api/v2/stock/price/live",
+		map[string]string{"filter": "THYAO", "region": "tr"},
+		`{"t":"state_change","d":{"marketSymbol":"XU100","stockSymbol":null,"state":"CLOSED","time":1789394100282}}`,
+		`{"t":"pr","d":{"s":"THYAO","ch":-1.17,"p":296.75,"d":1789394100282}}`,
+	))
+
+	stream, err := c.CreateLivePriceStreamForBIST(context.Background(), []string{"THYAO"})
+	if err != nil {
+		t.Fatalf("CreateLivePriceStreamForBIST: %v", err)
+	}
+	defer stream.Close()
+
+	msgs := receive(t, stream.Receive(), 2)
+
+	if msgs[0].Type != MessageTypeStateChange {
+		t.Errorf("first message type = %q, want state_change", msgs[0].Type)
+	}
+	if msgs[0].Data != (BISTStockLiveData{}) {
+		t.Errorf("state_change carried price data: %+v", msgs[0].Data)
+	}
+	if msgs[1].Type != MessageTypePrice || msgs[1].Data.Symbol != "THYAO" {
+		t.Errorf("price tick after state_change = %+v", msgs[1])
+	}
+}
+
 func TestDelayedPriceStreamDecodesV2Envelope(t *testing.T) {
 	c := newMockClient(t, sseHandler(t, "/api/v1/stock/price/delayed",
 		map[string]string{"filter": "GARAN", "region": "tr"},
