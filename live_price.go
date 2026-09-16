@@ -29,11 +29,22 @@ const (
 	MessageTypeOrderbook   MessageType = "ob"
 )
 
-// LiveMessageV2 is a generic wrapper for live price messages
+// LiveMessageV2 is the envelope used by the v2 price feeds (live and delayed
+// BIST prices, US prices, BIST bid/ask). On the wire every event looks like
+// {"t":"<type>","d":{...}}. Check Type before using Data:
+//
+//   - MessageTypePrice ("pr"): Data holds a price tick.
+//   - MessageTypeHeartbeat ("heartbeat"): sent every 10 seconds with no "d",
+//     so Data is the zero value.
+//   - MessageTypeStateChange ("state_change"): emitted on the BIST live and
+//     delayed feeds when a market or stock changes state, as
+//     {"t":"state_change","d":{"marketSymbol":..,"stockSymbol":..,"state":..,"time":..}}.
+//     Market-level events reach every subscriber regardless of the symbol
+//     filter. That payload does not match T, so Data is the zero value; the
+//     state payload is not decoded yet.
 type LiveMessageV2[T any] struct {
-	Data   T           `json:"data"`
-	Symbol string      `json:"symbol"`
-	Type   MessageType `json:"type"`
+	Type MessageType `json:"t"`
+	Data T           `json:"d"`
 }
 
 // LevelSide represents the side of an orderbook level
@@ -59,20 +70,26 @@ type OrderbookDeletedLevel struct {
 	Side LevelSide `json:"side"`
 }
 
-// BISTStockOrderBookData represents BIST stock order book data
+// BISTStockOrderBookData represents BIST stock order book data. Unlike the
+// price feeds the order book stream is not wrapped in an envelope and carries
+// the symbol under "symbol".
 type BISTStockOrderBookData struct {
 	Updated []OrderbookLevel        `json:"updated"`
 	Deleted []OrderbookDeletedLevel `json:"deleted"`
-	Symbol  string                  `json:"s"`
+	Symbol  string                  `json:"symbol"`
 }
 
 // LivePriceStream handles live price streaming for a specific region and type
 type LivePriceStream[T any] struct {
-	mu           sync.RWMutex
-	ctx          context.Context
-	cancel       context.CancelFunc
-	sseChan      <-chan LivePriceResult[T]
-	outputChan   chan LivePriceResult[T]
+	mu sync.RWMutex
+
+	// Per-subscription state, replaced on every Subscribe. cancel stops the
+	// SSE request and the forwarder; done is closed by the forwarder once it
+	// has exited and closed outputChan.
+	cancel     context.CancelFunc
+	done       chan struct{}
+	outputChan chan LivePriceResult[T]
+
 	c            *Client
 	region       Region
 	priceType    LivePriceType
@@ -91,7 +108,10 @@ func NewLivePriceStream[T any](client *Client, priceType LivePriceType, region R
 	}
 }
 
-// Subscribe subscribes to live price updates for given symbols
+// Subscribe subscribes to live price updates for the given symbols. Calling
+// Subscribe on a stream that is already subscribed switches it to the new
+// symbols: the channel previously returned by Receive is closed and a fresh
+// one is created, so call Receive again afterwards.
 func (s *LivePriceStream[T]) Subscribe(ctx context.Context, symbols []string) error {
 	if ctx == nil {
 		return fmt.Errorf("context cannot be nil")
@@ -106,12 +126,11 @@ func (s *LivePriceStream[T]) Subscribe(ctx context.Context, symbols []string) er
 	}
 
 	s.symbols = symbols
-	s.outputChan = make(chan LivePriceResult[T], 100) // Buffered channel
 	s.closed = false
-	s.ctx = ctx
+	s.isSubscribed = false
 
 	// Start streaming
-	if err := s.startStreaming(); err != nil {
+	if err := s.startStreaming(ctx); err != nil {
 		return fmt.Errorf("failed to start streaming: %w", err)
 	}
 
@@ -119,12 +138,14 @@ func (s *LivePriceStream[T]) Subscribe(ctx context.Context, symbols []string) er
 	return nil
 }
 
-// Receive returns a channel to receive live price data
+// Receive returns a channel to receive live price data. The channel is closed
+// when Close is called, when the context passed to Subscribe is cancelled,
+// when the server ends the stream, or when Subscribe is called again.
 func (s *LivePriceStream[T]) Receive() <-chan LivePriceResult[T] {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if !s.isSubscribed {
+	if !s.isSubscribed || s.outputChan == nil {
 		// Return a closed channel if not subscribed
 		ch := make(chan LivePriceResult[T])
 		close(ch)
@@ -148,18 +169,22 @@ func (s *LivePriceStream[T]) Close() error {
 	return s.cleanupExistingStream()
 }
 
-// cleanupExistingStream cancels and cleans up existing streaming task
+// cleanupExistingStream cancels the current subscription, if any, and waits
+// for its forwarding goroutine to exit. The forwarder owns outputChan and
+// closes it on the way out, so once this returns any consumer ranging over
+// the old channel has been released and nothing can write to it anymore.
 func (s *LivePriceStream[T]) cleanupExistingStream() error {
 	if s.cancel != nil {
 		s.cancel()
 		s.cancel = nil
 	}
 
-	if s.outputChan != nil {
-		close(s.outputChan)
-		s.outputChan = nil
+	if s.done != nil {
+		<-s.done
+		s.done = nil
 	}
 
+	s.outputChan = nil
 	return nil
 }
 
@@ -189,25 +214,38 @@ func (s *LivePriceStream[T]) buildStreamURL() string {
 }
 
 // startStreaming starts the SSE streaming connection
-func (s *LivePriceStream[T]) startStreaming() error {
+func (s *LivePriceStream[T]) startStreaming(ctx context.Context) error {
 	url := s.buildStreamURL()
 
-	ctxWithCancel, cancel := context.WithCancel(s.ctx)
-	s.cancel = cancel
+	ctxWithCancel, cancel := context.WithCancel(ctx)
 
-	channel, _, err := sendSSERequest[T](ctxWithCancel, s.c, url)
+	sseChan, _, err := sendSSERequest[T](ctxWithCancel, s.c, url)
 	if err != nil {
+		cancel()
 		return fmt.Errorf("failed to establish SSE connection: %w", err)
 	}
 
-	s.sseChan = channel
-	go s.forwardData()
+	outputChan := make(chan LivePriceResult[T], 100) // Buffered channel
+	done := make(chan struct{})
+
+	s.cancel = cancel
+	s.outputChan = outputChan
+	s.done = done
+
+	go s.forwardData(ctxWithCancel, sseChan, outputChan, done)
 
 	return nil
 }
 
-// forwardData forwards data from SSE channel to output channel
-func (s *LivePriceStream[T]) forwardData() {
+// forwardData forwards data from the SSE channel to outputChan until the
+// subscription context is cancelled or the SSE reader closes its channel
+// (the server ended the stream). It takes the channels as arguments rather
+// than reading them off the struct so a later Subscribe cannot swap them
+// underneath it. On exit it closes outputChan, releasing consumers ranging
+// over Receive(), and then signals done.
+func (s *LivePriceStream[T]) forwardData(ctx context.Context, sseChan <-chan LivePriceResult[T], outputChan chan<- LivePriceResult[T], done chan<- struct{}) {
+	defer close(done)
+	defer close(outputChan)
 	defer func() {
 		if r := recover(); r != nil {
 			s.c.logger.Error("panic in forwardData", r)
@@ -216,26 +254,17 @@ func (s *LivePriceStream[T]) forwardData() {
 
 	for {
 		select {
-		case data, ok := <-s.sseChan:
+		case data, ok := <-sseChan:
 			if !ok {
-				return
-			}
-
-			s.mu.RLock()
-			outputChan := s.outputChan
-			closed := s.closed
-			s.mu.RUnlock()
-
-			if closed || outputChan == nil {
 				return
 			}
 
 			select {
 			case outputChan <- data:
-			case <-s.ctx.Done():
+			case <-ctx.Done():
 				return
 			}
-		case <-s.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
@@ -267,8 +296,8 @@ func (c *Client) GetLivePriceStreamForBIST() *LivePriceStream[LiveMessageV2[BIST
 
 // GetLivePriceStreamForUS creates a new live price stream for US stocks.
 // Call Subscribe(ctx, symbols) on the returned stream to start receiving data.
-func (c *Client) GetLivePriceStreamForUS() *LivePriceStream[USStockLiveData] {
-	stream := NewLivePriceStream[USStockLiveData](c, LivePriceTypePrice, RegionUs)
+func (c *Client) GetLivePriceStreamForUS() *LivePriceStream[LiveMessageV2[USStockLiveData]] {
+	stream := NewLivePriceStream[LiveMessageV2[USStockLiveData]](c, LivePriceTypePrice, RegionUs)
 	return stream
 }
 
@@ -298,7 +327,7 @@ func (c *Client) CreateLivePriceStreamForBIST(ctx context.Context, symbols []str
 }
 
 // CreateLivePriceStreamForUS creates and subscribes to live price stream for US stocks
-func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[USStockLiveData], error) {
+func (c *Client) CreateLivePriceStreamForUS(ctx context.Context, symbols []string) (*LivePriceStream[LiveMessageV2[USStockLiveData]], error) {
 	stream := c.GetLivePriceStreamForUS()
 	if err := stream.Subscribe(ctx, symbols); err != nil {
 		return nil, fmt.Errorf("failed to subscribe to live price stream: %w", err)
@@ -324,10 +353,10 @@ func (c *Client) CreateDelayedPriceStreamForBIST(ctx context.Context, symbols []
 	return stream, nil
 }
 
-type BISTBidAskResponse struct {
-	Data BISTBidAskLiveData `json:"d"`
-	Type MessageType        `json:"t"`
-}
+// BISTBidAskResponse is the envelope of the bid/ask feed. It is the same
+// LiveMessageV2 envelope as the other price feeds; the alias is kept so the
+// bid/ask wire format cannot drift from the shared one again.
+type BISTBidAskResponse = LiveMessageV2[BISTBidAskLiveData]
 
 type BISTBidAskLiveData struct {
 	Symbol string  `json:"s"`
@@ -352,4 +381,3 @@ func (c *Client) CreateLiveBidAskStreamForBIST(ctx context.Context, symbols []st
 	}
 	return stream, nil
 }
-

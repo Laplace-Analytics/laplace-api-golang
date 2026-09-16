@@ -1,4 +1,4 @@
-module github.com/Laplace-Analytics/laplace-api-golang
+module github.com/Laplace-Analytics/laplace-api-golang/v2
 
 go 1.22.1
 

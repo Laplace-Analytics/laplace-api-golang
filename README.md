@@ -19,8 +19,10 @@ The official Go SDK for the Laplace stock data platform. Get easy access to stoc
 ## Installation
 
 ```bash
-go get github.com/Laplace-Analytics/laplace-api-golang
+go get github.com/Laplace-Analytics/laplace-api-golang/v2
 ```
+
+> **Upgrading from an earlier v2 tag?** As of v2.7.0 the module path is `github.com/Laplace-Analytics/laplace-api-golang/v2`. Change your import to `laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"` and run the `go get` above. Tags `v2.0.0` to `v2.6.0` keep the old module path and do not resolve under `/v2`.
 
 ## Quick Start
 
@@ -32,7 +34,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Laplace-Analytics/laplace-api-golang"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
 )
 
 func main() {
@@ -176,17 +178,54 @@ movers, err := client.GetTopMovers(ctx, laplace.TopMoversDirectionGainers, lapla
 
 ### Live Price Client
 
+Every event on the price feeds is a `LiveMessageV2` envelope. Check `Type` before reading `Data`:
+
+- `laplace.MessageTypePrice` (`"pr"`): a price tick, `Data` is populated.
+- `laplace.MessageTypeHeartbeat` (`"heartbeat"`): sent every 10 seconds, `Data` is empty.
+- `laplace.MessageTypeStateChange` (`"state_change"`): a BIST market or stock changed state. Market-level events reach every subscriber regardless of the symbol filter. `Data` is empty; the state payload is not decoded yet.
+
+The channel returned by `Receive()` is closed when you call `Close()`, when the context passed to the stream is cancelled, or when the server ends the stream.
+
 ```go
-// Create and subscribe to live prices for BIST stocks
+// Live prices for BIST stocks (BISTStockLiveData payload)
 stream, err := client.CreateLivePriceStreamForBIST(ctx, []string{"THYAO", "GARAN"})
-
-// Or for US stocks
-stream, err := client.CreateLivePriceStreamForUS(ctx, []string{"AAPL", "GOOGL"})
-
-for data := range stream.Receive() {
-	fmt.Printf("Received data: %+v\n", data.Data)
+if err != nil {
+	log.Fatal(err)
 }
+defer stream.Close()
 
+for msg := range stream.Receive() {
+	if msg.Error != nil {
+		log.Println(msg.Error)
+		continue
+	}
+	if msg.Data.Type != laplace.MessageTypePrice {
+		continue
+	}
+	tick := msg.Data.Data
+	fmt.Printf("%s %.2f (%.2f%%)\n", tick.Symbol, tick.ClosePrice, tick.DailyPercentChange)
+}
+```
+
+```go
+// Live prices for US stocks (same envelope, USStockLiveData payload)
+stream, err := client.CreateLivePriceStreamForUS(ctx, []string{"AAPL", "GOOGL"})
+if err != nil {
+	log.Fatal(err)
+}
+defer stream.Close()
+
+for msg := range stream.Receive() {
+	if msg.Error != nil {
+		log.Println(msg.Error)
+		continue
+	}
+	if msg.Data.Type != laplace.MessageTypePrice {
+		continue
+	}
+	tick := msg.Data.Data
+	fmt.Printf("%s %.2f (%+.2f / %.2f%%)\n", tick.Symbol, tick.Price, tick.AmountChange, tick.PercentChange)
+}
 ```
 
 ### Brokers Client
@@ -274,7 +313,7 @@ insights, err := client.GetKeyInsights(ctx, "AAPL", laplace.RegionUs)
 ```go
 import (
 	"fmt"
-	"github.com/Laplace-Analytics/laplace-api-golang"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
 )
 
 client := laplace.NewClient(laplace.LaplaceConfiguration{

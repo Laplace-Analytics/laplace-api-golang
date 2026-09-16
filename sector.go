@@ -52,7 +52,7 @@ func (c *Client) GetSectorDetail(ctx context.Context, id string, region Region, 
 
 	res, err := sendRequest[CollectionDetail](ctx, c, req)
 	if err != nil {
-		return CollectionDetail{}, nil
+		return CollectionDetail{}, err
 	}
 
 	return res, nil

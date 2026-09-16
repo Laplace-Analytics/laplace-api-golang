@@ -77,6 +77,66 @@ func TestGetLivePriceForUS(t *testing.T) {
 	}
 }
 
+// collectPriceSymbols drains ch for up to d and returns the symbols of the
+// price ticks it saw, skipping heartbeats and state changes. It returns early
+// if ch is closed and fails the test on a stream error.
+func collectPriceSymbols[T any](t *testing.T, ch <-chan LivePriceResult[LiveMessageV2[T]], symbolOf func(T) string, d time.Duration) []string {
+	t.Helper()
+
+	deadline := time.After(d)
+	symbols := []string{}
+	for {
+		select {
+		case msg, ok := <-ch:
+			if !ok {
+				return symbols
+			}
+			if msg.Error != nil {
+				t.Fatalf("Received error: %v", msg.Error)
+			}
+			if msg.Data.Type != MessageTypePrice {
+				continue
+			}
+			symbols = append(symbols, symbolOf(msg.Data.Data))
+		case <-deadline:
+			return symbols
+		}
+	}
+}
+
+// assertSwitchedSymbols checks that ticks seen before the switch belong to the
+// first subscription (AKBNK) and ticks seen after it belong to the second
+// (TUPRS, ASELS). Either window may be empty outside market hours; that is
+// logged rather than failed.
+func assertSwitchedSymbols(t *testing.T, beforeSwitch, afterSwitch []string) {
+	t.Helper()
+
+	if len(beforeSwitch) == 0 {
+		t.Log("No price ticks received before switch (market closed?)")
+	} else {
+		if !slices.Contains(beforeSwitch, "AKBNK") {
+			t.Errorf("Did not receive AKBNK data before switch, got %v", beforeSwitch)
+		}
+		if slices.Contains(beforeSwitch, "TUPRS") || slices.Contains(beforeSwitch, "ASELS") {
+			t.Errorf("Received data for the second subscription before switch: %v", beforeSwitch)
+		}
+	}
+
+	if len(afterSwitch) == 0 {
+		t.Log("No price ticks received after switch (market closed?)")
+	} else {
+		if !slices.Contains(afterSwitch, "TUPRS") {
+			t.Errorf("Did not receive TUPRS data after switch, got %v", afterSwitch)
+		}
+		if !slices.Contains(afterSwitch, "ASELS") {
+			t.Errorf("Did not receive ASELS data after switch, got %v", afterSwitch)
+		}
+		if slices.Contains(afterSwitch, "AKBNK") {
+			t.Errorf("Still receiving AKBNK data after switch: %v", afterSwitch)
+		}
+	}
+}
+
 func TestLivePriceSubscribe(t *testing.T) {
 	cfg, err := loadConfig()
 	if err != nil {
@@ -93,52 +153,24 @@ func TestLivePriceSubscribe(t *testing.T) {
 
 	// Use new manual stream creation for more control
 	stream := client.GetLivePriceStreamForBIST()
-	err = stream.Subscribe(ctx, []string{"AKBNK"})
-	if err != nil {
+	if err := stream.Subscribe(ctx, []string{"AKBNK"}); err != nil {
 		t.Fatalf("Failed to subscribe to live price stream: %v", err)
 	}
 	defer stream.Close()
 
-	receivedData := []string{}
+	symbolOf := func(d BISTStockLiveData) string { return d.Symbol }
 
-	timer := time.NewTimer(5 * time.Second)
-	go func() {
-		<-timer.C
-		stream.Subscribe(ctx, []string{"TUPRS", "ASELS"})
-		receivedData = append(receivedData, "SWITCH")
+	// Collect from the first subscription, then switch symbols from this
+	// goroutine. Subscribe closes the old channel, so Receive is called again
+	// to get the new one.
+	beforeSwitch := collectPriceSymbols(t, stream.Receive(), symbolOf, 5*time.Second)
 
-		timer.Reset(5 * time.Second)
-		<-timer.C
-		stream.Close()
-	}()
-
-	receiveChan := stream.Receive()
-	for data := range receiveChan {
-		if data.Error != nil {
-			t.Fatalf("Received error: %v", data.Error)
-		}
-
-		receivedData = append(receivedData, data.Data.Symbol)
+	if err := stream.Subscribe(ctx, []string{"TUPRS", "ASELS"}); err != nil {
+		t.Fatalf("Failed to switch symbols: %v", err)
 	}
+	afterSwitch := collectPriceSymbols(t, stream.Receive(), symbolOf, 5*time.Second)
 
-	idxOfSwitch := slices.Index(receivedData, "SWITCH")
-
-	if idxOfSwitch > 0 {
-		beforeSwitch := receivedData[:idxOfSwitch]
-		if !slices.Contains(beforeSwitch, "AKBNK") {
-			t.Error("Did not receive AKBNK data before switch")
-		}
-	}
-
-	if idxOfSwitch >= 0 && idxOfSwitch < len(receivedData)-1 {
-		afterSwitch := receivedData[idxOfSwitch+1:]
-		if !slices.Contains(afterSwitch, "TUPRS") {
-			t.Error("Did not receive TUPRS data after switch")
-		}
-		if !slices.Contains(afterSwitch, "ASELS") {
-			t.Error("Did not receive ASELS data after switch")
-		}
-	}
+	assertSwitchedSymbols(t, beforeSwitch, afterSwitch)
 }
 
 func TestLivePriceClose(t *testing.T) {
@@ -349,53 +381,22 @@ func TestLiveBidAskSubscribe(t *testing.T) {
 	defer cancel()
 
 	stream := client.GetLiveBidAskStreamForBIST()
-	err = stream.Subscribe(ctx, []string{"AKBNK"})
-	if err != nil {
+	if err := stream.Subscribe(ctx, []string{"AKBNK"}); err != nil {
 		t.Fatalf("Failed to subscribe to bid/ask stream: %v", err)
 	}
 	defer stream.Close()
 
-	receivedData := []string{}
+	symbolOf := func(d BISTBidAskLiveData) string { return d.Symbol }
 
-	timer := time.NewTimer(5 * time.Second)
-	go func() {
-		<-timer.C
-		// Switch to different symbols
-		stream.Subscribe(ctx, []string{"TUPRS", "ASELS"})
-		receivedData = append(receivedData, "SWITCH")
+	beforeSwitch := collectPriceSymbols(t, stream.Receive(), symbolOf, 5*time.Second)
 
-		timer.Reset(5 * time.Second)
-		<-timer.C
-		stream.Close()
-	}()
-
-	receiveChan := stream.Receive()
-	for data := range receiveChan {
-		if data.Error != nil {
-			t.Fatalf("Received error: %v", data.Error)
-		}
-
-		receivedData = append(receivedData, data.Data.Data.Symbol)
+	// Switch to different symbols
+	if err := stream.Subscribe(ctx, []string{"TUPRS", "ASELS"}); err != nil {
+		t.Fatalf("Failed to switch symbols: %v", err)
 	}
+	afterSwitch := collectPriceSymbols(t, stream.Receive(), symbolOf, 5*time.Second)
 
-	idxOfSwitch := slices.Index(receivedData, "SWITCH")
-
-	if idxOfSwitch > 0 {
-		beforeSwitch := receivedData[:idxOfSwitch]
-		if !slices.Contains(beforeSwitch, "AKBNK") {
-			t.Error("Did not receive AKBNK bid/ask data before switch")
-		}
-	}
-
-	if idxOfSwitch >= 0 && idxOfSwitch < len(receivedData)-1 {
-		afterSwitch := receivedData[idxOfSwitch+1:]
-		if !slices.Contains(afterSwitch, "TUPRS") {
-			t.Error("Did not receive TUPRS bid/ask data after switch")
-		}
-		if !slices.Contains(afterSwitch, "ASELS") {
-			t.Error("Did not receive ASELS bid/ask data after switch")
-		}
-	}
+	assertSwitchedSymbols(t, beforeSwitch, afterSwitch)
 }
 
 func TestLiveBidAskClose(t *testing.T) {
