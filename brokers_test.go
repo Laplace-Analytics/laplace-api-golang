@@ -2,6 +2,7 @@ package laplace
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -15,6 +16,21 @@ func TestBroker(t *testing.T) {
 	suite.Run(t, &BrokerTestSuite{
 		NewClientTestSuite(),
 	})
+}
+
+func TestBrokerSortNetVolumeQueryParam(t *testing.T) {
+	client := newMockClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("sortBy"); got != "netVolume" {
+			t.Errorf("query sortBy = %q, want netVolume", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"recordCount":0,"totalStats":{},"items":[]}`))
+	})
+
+	_, err := client.GetMarketBrokers(context.Background(), RegionTr, BrokerSortNetVolume, SortDirectionDesc, "2025-06-01", "2025-06-30", 0, 5)
+	if err != nil {
+		t.Fatalf("GetMarketBrokers: %v", err)
+	}
 }
 
 func (s *BrokerTestSuite) TestGetBrokers() {

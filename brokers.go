@@ -17,6 +17,7 @@ const (
 	BrokerSortTotalBuyVolume  BrokerSort = "totalBuyVolume"
 	BrokerSortTotalSellAmount BrokerSort = "totalSellAmount"
 	BrokerSortTotalSellVolume BrokerSort = "totalSellVolume"
+	BrokerSortNetVolume       BrokerSort = "netVolume"
 )
 
 
