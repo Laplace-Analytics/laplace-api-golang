@@ -46,6 +46,7 @@ type BrokerStats struct {
 	NetAmount       float64 `json:"netAmount"`
 	TotalBuyVolume  float64 `json:"totalBuyVolume"`
 	TotalSellVolume float64 `json:"totalSellVolume"`
+	NetVolume       float64 `json:"netVolume"`
 	TotalVolume     float64 `json:"totalVolume"`
 	TotalAmount     float64 `json:"totalAmount"`
 	AverageCost     float64 `json:"averageCost,omitempty"`

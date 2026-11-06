@@ -33,6 +33,25 @@ func TestBrokerSortNetVolumeQueryParam(t *testing.T) {
 	}
 }
 
+func TestBrokerStatsDecodesNetVolume(t *testing.T) {
+	client := newMockClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"recordCount":1,"totalStats":{"netVolume":-250},"items":[{"netVolume":1500}]}`))
+	})
+
+	resp, err := client.GetMarketBrokers(context.Background(), RegionTr, BrokerSortNetVolume, SortDirectionDesc, "2025-06-01", "2025-06-30", 0, 5)
+	if err != nil {
+		t.Fatalf("GetMarketBrokers: %v", err)
+	}
+
+	if got := resp.TotalStats.NetVolume; got != -250 {
+		t.Errorf("TotalStats.NetVolume = %v, want -250", got)
+	}
+	if len(resp.Items) != 1 || resp.Items[0].NetVolume != 1500 {
+		t.Errorf("Items = %+v, want one item with NetVolume 1500", resp.Items)
+	}
+}
+
 func (s *BrokerTestSuite) TestGetBrokers() {
 	client := newTestClient(s.Config)
 
