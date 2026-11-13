@@ -303,6 +303,94 @@ err = client.DeleteCustomTheme(ctx, *id)
 insights, err := client.GetKeyInsights(ctx, "AAPL", laplace.RegionUs)
 ```
 
+### News Client
+
+`GetNewsV2Page` takes every `/v2/news` filter (`GetNewsV2Params` embeds the v1 `GetNewsParams` and adds the v2-only ones) and returns a `NewsV2Page` with `NextCursor` for cursor paging. `GetNewsV2` and `GetNews` keep their existing signatures. Unset filters aren't sent; boolean filters are `*bool` so `false` can be sent explicitly.
+
+```go
+// News about one company: drop table-only mentions and market wraps,
+// cap any publisher at 25% of the result and show each story once.
+page, err := client.GetNewsV2Page(ctx, laplace.GetNewsV2Params{
+	GetNewsParams: laplace.GetNewsParams{
+		Region:  laplace.RegionTr,
+		Locale:  laplace.LocaleTr,
+		Symbols: "THYAO",
+	},
+	TickerRelevance:     []laplace.NewsTickerRelevance{laplace.NewsTickerRelevancePrimary, laplace.NewsTickerRelevanceMentioned},
+	ExcludeListArticles: &yes, // yes := true
+	CollapseClusters:    &yes,
+	MaxPublisherShare:   &share, // share := 25
+	EventTypes:          []laplace.NewsEventType{laplace.NewsEventTypeFinancialResults, laplace.NewsEventTypeDividend},
+	OrderByFields: []laplace.NewsOrder{
+		{Field: laplace.NewsOrderByQualityScoreV2, Direction: laplace.SortDirectionDesc},
+		{Field: laplace.NewsOrderByPublishedAt, Direction: laplace.SortDirectionDesc},
+	},
+})
+for _, n := range page.Items {
+	fmt.Println(n.PrimaryTicker, n.Content.Title, n.EventType, n.ClusterSize)
+}
+```
+
+```go
+// Cursor paging: ForEachNewsV2 follows NextCursor until the last page and
+// sends includeTotal=false. Leave Page unset; returning an error from the
+// callback stops the loop and is returned.
+size := 100
+err := client.ForEachNewsV2(ctx, laplace.GetNewsV2Params{
+	GetNewsParams: laplace.GetNewsParams{Region: laplace.RegionTr, Locale: laplace.LocaleTr, Symbols: "THYAO", Size: &size},
+	PublishedFrom: "2026-11-01",
+}, func(n laplace.NewsV2) error {
+	handle(n)
+	return nil
+})
+```
+
+```go
+// Incremental sync: upsert by ID, then store the largest UpdatedAt minus
+// 5 minutes as the next UpdatedSince. Send QualityScoreMin=0 so articles
+// whose score is later lowered still arrive as updates.
+zero, size := 0, 100
+var latest time.Time
+err := client.ForEachNewsV2(ctx, laplace.GetNewsV2Params{
+	GetNewsParams: laplace.GetNewsParams{Region: laplace.RegionTr, Locale: laplace.LocaleTr, QualityScoreMin: &zero, Size: &size},
+	UpdatedSince:  lastSync.Format(time.RFC3339),
+}, func(n laplace.NewsV2) error {
+	if n.UpdatedAt.After(latest) {
+		latest = n.UpdatedAt
+	}
+	return store.Upsert(n.ID, n)
+})
+if err == nil && !latest.IsZero() {
+	lastSync = latest.Add(-5 * time.Minute)
+}
+```
+
+`NewsV2Page.RecordCount` is an `int`, as on `PaginatedResponse`. With `IncludeTotal: &false` (and in `ForEachNewsV2`) the API sends no total: `RecordCount` is then 0 and `HasRecordCount` is false.
+
+`NewsV2.PublishedAt` and `ContentUpdatedAt` are `*time.Time` and are nil when unknown. `Timestamp` and the `TimestampFrom` / `TimestampTo` filters are deprecated: use `PublishedAt` and `PublishedFrom` / `PublishedTo`.
+
+Typed constants exist for ticker relevance (`NewsTickerRelevance*`), event types (`NewsEventType*`) and sort fields (`NewsOrderBy*`). Values the SDK doesn't list yet can be passed as `laplace.NewsEventType("…")`; the API rejects unknown values with a `400` whose message is in `LaplaceHTTPError.Message.Message`.
+
+```go
+// Lookups
+eventTypes, err := client.GetNewsEventTypes(ctx, laplace.LocaleTr)
+categories, err := client.GetNewsCategories(ctx, laplace.LocaleTr) // IDs for CategoryIds
+lanes, err := client.GetNewsLanes(ctx, laplace.GetNewsLanesParams{Region: laplace.RegionTr})
+
+// Live news with the same content filters
+stream, err := client.CreateNewsStream(ctx, laplace.StreamNewsParams{
+	Region:              laplace.RegionTr,
+	Locale:              laplace.LocaleTr,
+	Symbols:             []string{"THYAO", "GARAN"},
+	ExcludeListArticles: &yes,
+	EventTypes:          []laplace.NewsEventType{laplace.NewsEventTypeFinancialResults},
+})
+defer stream.Close()
+for msg := range stream.Receive() {
+	// msg.Data is []laplace.NewsV2
+}
+```
+
 ## Supported Regions
 
 - **US**: United States stock market
@@ -387,7 +475,7 @@ LAPLACE_API_KEY=your-key go test -tags=integration ./...
 
 ## Requirements
 
-- Go 1.21+
+- Go 1.22+
 - Standard library only (no external dependencies)
 
 ## Documentation
