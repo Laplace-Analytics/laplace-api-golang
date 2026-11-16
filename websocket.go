@@ -37,13 +37,14 @@ type WebSocketUrlParams struct {
 
 type WebSocketUrlResponse struct {
 	URL         string      `json:"url,omitempty"`
+	ExpiresAt   time.Time   `json:"expiresAt"`
 	Message     string      `json:"message,omitempty"`
 	Code        MessageCode `json:"code,omitempty"`
 	ExampleBody any         `json:"exampleBody,omitempty"`
 }
 
 // GetWebSocketUrl generates a WebSocket URL for accessing real-time market data feeds including live prices and depth data.
-func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, feeds []FeedType) (string, error) {
+func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, feeds []FeedType) (WebSocketUrlResponse, error) {
 	params := WebSocketUrlParams{
 		ExternalUserId: externalUserId,
 		Feeds:          feeds,
@@ -51,22 +52,17 @@ func (c *Client) GetWebSocketUrl(ctx context.Context, externalUserId string, fee
 
 	jsonData, err := json.Marshal(params)
 	if err != nil {
-		return "", err
+		return WebSocketUrlResponse{}, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v2/ws/url", c.baseUrl), bytes.NewBuffer(jsonData))
 	if err != nil {
-		return "", err
+		return WebSocketUrlResponse{}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := sendRequest[WebSocketUrlResponse](ctx, c, req)
-	if err != nil {
-		return "", err
-	}
-
-	return resp.URL, nil
+	return sendRequest[WebSocketUrlResponse](ctx, c, req)
 }
 
 // RevokeWebSocketConnection revokes an active WebSocket connection by its ID (the UUID segment from the WebSocket URL).
@@ -131,4 +127,3 @@ func (c *Client) SendWebsocketEvent(ctx context.Context, params SendWebsocketEve
 	_, err = sendRequest[any](ctx, c, req)
 	return err
 }
-
