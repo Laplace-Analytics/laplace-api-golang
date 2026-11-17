@@ -19,10 +19,10 @@ The official Go SDK for the Laplace stock data platform. Get easy access to stoc
 ## Installation
 
 ```bash
-go get github.com/Laplace-Analytics/laplace-api-golang/v2
+go get github.com/Laplace-Analytics/laplace-api-golang/v3
 ```
 
-> **Upgrading from an earlier v2 tag?** As of v2.7.0 the module path is `github.com/Laplace-Analytics/laplace-api-golang/v2`. Change your import to `laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"` and run the `go get` above. Tags `v2.0.0` to `v2.6.0` keep the old module path and do not resolve under `/v2`.
+> **Upgrading from v2?** v3 changes `GetWebSocketUrl` to return a `WebSocketUrlResponse` (with `URL` and `ExpiresAt`) instead of a string. Change your import to `laplace "github.com/Laplace-Analytics/laplace-api-golang/v3"` and run the `go get` above.
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ import (
 	"fmt"
 	"log"
 
-	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v3"
 )
 
 func main() {
@@ -251,8 +251,9 @@ results, err := client.Search(ctx, "technology", []laplace.SearchType{laplace.Se
 ### WebSocket Client
 
 ```go
-// Get WebSocket URL for real-time data
-url, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR})
+// Get WebSocket URL for real-time data.
+// The link stops working at resp.ExpiresAt; request a new one before then.
+resp, err := client.GetWebSocketUrl(ctx, "user-id", []laplace.FeedType{laplace.FeedTypeLivePriceTR})
 ```
 
 ### Capital Increase Client
@@ -401,7 +402,7 @@ for msg := range stream.Receive() {
 ```go
 import (
 	"fmt"
-	laplace "github.com/Laplace-Analytics/laplace-api-golang/v2"
+	laplace "github.com/Laplace-Analytics/laplace-api-golang/v3"
 )
 
 client := laplace.NewClient(laplace.LaplaceConfiguration{

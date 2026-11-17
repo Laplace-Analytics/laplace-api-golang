@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -25,8 +26,8 @@ func (s *WebSocketTestSuite) TestGetWebSocketUrl() {
 
 	resp, err := client.GetWebSocketUrl(ctx, "test-user", []FeedType{FeedTypeLivePriceTR})
 	s.Require().NoError(err)
-	s.Require().IsType("", resp)
-	s.Require().NotEmpty(resp)
+	s.Require().NotEmpty(resp.URL)
+	s.Require().True(resp.ExpiresAt.After(time.Now()))
 }
 
 func (s *WebSocketTestSuite) TestGetWebsocketUsageForMonth() {
@@ -50,12 +51,12 @@ func (s *WebSocketTestSuite) TestRevokeWebSocketConnection() {
 	ctx := context.Background()
 
 	// Generate a WebSocket URL to get a valid connection ID
-	url, err := client.GetWebSocketUrl(ctx, "test-revoke-user", []FeedType{FeedTypeLivePriceTR})
+	resp, err := client.GetWebSocketUrl(ctx, "test-revoke-user", []FeedType{FeedTypeLivePriceTR})
 	s.Require().NoError(err)
-	s.Require().NotEmpty(url)
+	s.Require().NotEmpty(resp.URL)
 
 	// Extract the UUID from the URL (last path segment)
-	parts := strings.Split(url, "/")
+	parts := strings.Split(resp.URL, "/")
 	id := parts[len(parts)-1]
 	s.Require().NotEmpty(id)
 

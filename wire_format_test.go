@@ -237,3 +237,24 @@ func TestGetSectorDetailReturnsUpstreamError(t *testing.T) {
 		t.Errorf("error = %+v", httpErr)
 	}
 }
+
+func TestGetWebSocketUrlDecodesExpiresAt(t *testing.T) {
+	c := newMockClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/api/v2/ws/url" {
+			t.Errorf("request = %s %s, want POST /api/v2/ws/url", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"url":"wss://example.com/api/v2/ws/abc","expiresAt":"2026-11-17T15:00:00+03:00"}`))
+	})
+
+	resp, err := c.GetWebSocketUrl(context.Background(), "user-id", []FeedType{FeedTypeLivePriceTR})
+	if err != nil {
+		t.Fatalf("GetWebSocketUrl: %v", err)
+	}
+	if resp.URL != "wss://example.com/api/v2/ws/abc" {
+		t.Errorf("URL = %q", resp.URL)
+	}
+	if want := time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC); !resp.ExpiresAt.Equal(want) {
+		t.Errorf("ExpiresAt = %v, want %v", resp.ExpiresAt, want)
+	}
+}
